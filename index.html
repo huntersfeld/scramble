@@ -16,6 +16,7 @@
   --ink:#F1D7B8; --muted:rgba(241,215,184,.66); --accent:#F1D7B8; --accent-ink:#2E0F14;
   --A:#F1D7B8; --B:#4C8C8A; --C:#E2A33A;
   --f:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ok:#8DB86B; --no:#E4573F;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -47,7 +48,7 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
 .ico{width:24px;height:24px;vertical-align:-5px}
 
 /* Ripple: a half dome of rings that pops in, rolls outward fast, then keeps drifting slowly. */
-.ripple{position:relative;overflow:hidden;flex:none;display:block;padding:0}
+.ripple{position:relative;overflow:visible;clip-path:inset(-20% -20% 0 -20%);flex:none;display:block;padding:0}
 .ripple>div{position:absolute;left:0;top:0;border-radius:50%;transform-origin:50% 50%}
 
 .hero{position:relative;height:290px;flex:none;border-bottom:2px solid var(--ink);overflow:hidden}
@@ -126,6 +127,13 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
 .stats b{display:block;font-weight:900;font-stretch:75%;font-size:44px;line-height:.9;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .stats span{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.7}
 .note{font-size:14px;color:var(--muted)}
+.chip{font:inherit;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;background:none;border:1px solid var(--rule);color:var(--ink);padding:6px 10px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--accent-ink);border-color:var(--ink)}
+.chip:focus-visible{outline:2px solid var(--A);outline-offset:2px}
+.side{display:grid;grid-template-columns:1fr auto;align-items:center;gap:6px 16px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding-block:14px}
+.side h3{margin:0;font-size:20px;font-weight:800}
+.side p{margin:0;grid-column:1;font-size:14px;color:var(--muted)}
+.side .btn{grid-column:2;grid-row:1/span 3;width:auto;margin:0}
 /* Emoji drills: Link Up's four-by-four board and Common Thread's four-up. */
 .lk,.ct{position:absolute;inset:0;--emoji:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
 .lk{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:6px;padding:6px}
@@ -137,8 +145,8 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
 .lk-solved b{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
 .lk-solved span{font-family:var(--emoji);font-size:clamp(20px,6vw,28px);letter-spacing:.2em}
 .ct{display:grid;grid-template-columns:1fr 1fr;place-items:center;padding:12%;font-family:var(--emoji);font-size:clamp(52px,17vw,88px);line-height:1}
-.ct.ok{box-shadow:inset 0 0 0 4px #8DB86B}
-.ct.no{box-shadow:inset 0 0 0 4px #E4573F}
+.ct.ok{box-shadow:inset 0 0 0 4px var(--ok)}
+.ct.no{box-shadow:inset 0 0 0 4px var(--no)}
 .key .kw{display:block;font-size:15px;font-weight:700;line-height:1.2;padding:6px 8px}
 .practice-tag{display:inline-block;box-shadow:inset 0 0 0 1px var(--muted);color:var(--muted);padding:4px 8px}
 </style>
@@ -149,6 +157,7 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
   <header>
     <div class="mark">SCRAMBLE</div>
     <div class="dateline" id="dateline"></div>
+    <button class="chip" id="quit-btn" hidden>&larr; Back</button>
   </header>
 
   <section id="home" class="wrap">
@@ -162,6 +171,13 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
     <ol class="roster" id="roster"></ol>
     <button class="btn" id="start-btn">Start</button>
     <p class="note">About four minutes. Phone in portrait or a mouse both work.</p>
+    <div class="side">
+      <div class="label">SIDE GAME · NO CLOCK</div>
+      <h3>Link Up</h3>
+      <p>Sixteen emoji, four hidden groups. Doesn't count toward today's score.</p>
+      <button class="btn ghost" id="side-btn">Play</button>
+    </div>
+    <div><button class="chip" id="cb-btn" aria-pressed="false">Color-blind palette: off</button></div>
   </section>
 
   <section id="play" hidden>
@@ -226,10 +242,18 @@ const store = {
 };
 
 /* ---------- Shapes ---------- */
-const PAL = { red: '#E4573F', orange: '#EE8A3A', yellow: '#F2C54B', green: '#8DB86B', cyan: '#6CC4BE', blue: '#7393DB', purple: '#A98BD8', pink: '#EF9BB8' };
+const PAL = {};
+/* Standard palette, and a color-blind palette built on Okabe-Ito hues. The color-blind pool drops to five colors that stay apart under red-green and blue-yellow color blindness. */
+const PALETTES = {
+  std: { pal: { red: '#E4573F', orange: '#EE8A3A', yellow: '#F2C54B', green: '#8DB86B', cyan: '#6CC4BE', blue: '#7393DB', purple: '#A98BD8', pink: '#EF9BB8' },
+    names: ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple', 'pink'], tiles: ['red', 'yellow', 'cyan', 'purple', 'green'] },
+  cb: { pal: { red: '#E3702E', orange: '#E69F00', yellow: '#F0E442', green: '#1FAF85', cyan: '#56B4E9', blue: '#4A92D8', purple: '#C27BB0', pink: '#D884B4' },
+    names: ['red', 'yellow', 'green', 'cyan', 'pink'], tiles: ['red', 'yellow', 'green', 'cyan', 'pink'] }
+};
 /* Drill surfaces in Oxblood: lamp housings, unlit cells, fog, tracks. */
 const UI = { deep: '#1F0A0E', off: '#55222A', fog: '#4A1C23', fogLine: '#6E3038', cell: '#301116', ghost: '#6A3A40', track: '#55222A', zone: '#4A1C23' };
-const COLOR_NAMES = Object.keys(PAL);
+const COLOR_NAMES = [];
+let CB = false;
 /* Abstract geometric set: half discs, quarter fans and wedges cut from one square. */
 const SQ = (x, y, e = .9) => Math.abs(x) <= e && Math.abs(y) <= e;
 const SH = {
@@ -248,6 +272,9 @@ const SH = {
   block: (x, y) => Math.abs(x) <= .95 && Math.abs(y) <= .95
 };
 const SHAPES = ['dome', 'bowtie', 'petal', 'fan', 'drop', 'clover', 'cross', 'hourglass'];
+const INK = '#F1D7B8';
+/* A color named in a prompt is written in that color, so the word itself is the cue. */
+const colorWord = c => `<b style="color:${PAL[c]}">${c}</b>`;
 const plural = s => /(ch|ss|sh)$/.test(s) ? s + 'es' : s + 's';
 /* Each shape renders once per color and turn at high resolution (2x2 supersampled), then scales down to any size. */
 const SPR = 128, sprCache = new Map();
@@ -277,6 +304,12 @@ const icon = (shape, color, rot = 0) => {
   return `<img class="ico" alt="" src="${iconCache.get(key)}">`;
 };
 const shapeLabel = (shape, color) => `${icon(shape, color)} ${color ? color + ' ' : ''}${plural(shape)}`;
+function setPalette(cb) {
+  const P0 = PALETTES[cb ? 'cb' : 'std']; CB = cb;
+  Object.assign(PAL, P0.pal); COLOR_NAMES.splice(0, COLOR_NAMES.length, ...P0.names); TILE_COLS.splice(0, TILE_COLS.length, ...P0.tiles);
+  sprCache.clear(); iconCache.clear();
+  document.documentElement.style.setProperty('--ok', PAL.green); document.documentElement.style.setProperty('--no', PAL.red);
+}
 
 /* ---------- Ripple dome ---------- */
 /* Pops in, ripples outward fast, then eases into a slow drift that never fully stops. */
@@ -318,8 +351,10 @@ function ripple(host, size) {
 
 /* ---------- Pattern tiles (shared by Next in Line and Missing Piece) ---------- */
 /* A tile is one shape, drawn 1 to 4 times, in one color, turned 0 to 3 quarter turns. Only these three look different at every turn. */
-const TURNERS = ['dome', 'fan', 'drop'];
-const TILE_COLS = ['red', 'yellow', 'cyan', 'purple', 'green'];
+const TURNERS = ['arrow', 'dome', 'fan'];
+/* Bold, clearly different silhouettes for the shape rules, so the change reads at a glance even drawn four to a tile. */
+const TILE_SHAPES = ['circle', 'block', 'dome', 'cross', 'ring', 'clover'];
+const TILE_COLS = [];
 const FAM_WORDS = { rot: 'turns', count: 'counts', color: 'colors', shape: 'shapes' };
 const famList = fams => fams.map(f => FAM_WORDS[f]).join(', ').replace(/, ([^,]*)$/, ' and $1');
 const tileKey = t => `${t.shape}|${t.color}|${t.rot}|${t.count}`;
@@ -344,19 +379,20 @@ function tileOptions(rng, ans, attrs, pools, n) {
   return shuffle(rng, out);
 }
 function tilePools(rng, attrs, maxCount) {
-  const shapes = shuffle(rng, attrs.includes('rot') ? TURNERS : SHAPES).slice(0, 3);
+  const shapes = shuffle(rng, attrs.includes('rot') ? TURNERS : TILE_SHAPES).slice(0, 3);
   return { shape: shapes, color: shuffle(rng, TILE_COLS).slice(0, 3), rot: attrs.includes('rot') ? [0, 1, 2, 3] : [], count: Array.from({ length: maxCount }, (_, i) => i + 1) };
 }
+/* Puzzles 1 to 3 change one thing per step; from puzzle 4 on, two things change at once. Each rule keeps a plain-words description for the reveal. */
 function makeSeries(rng, level, fams) {
   const attrs = shuffle(rng, fams).slice(0, level < 3 ? 1 : 2), pools = tilePools(rng, attrs, 4);
-  const base = { shape: pools.shape[0], color: pools.color[0], rot: attrs.includes('rot') ? Math.floor(rng() * 4) : 0, count: 1 }, rule = {};
-  if (attrs.includes('rot')) { const st = pick(rng, [1, -1, 2]); rule.rot = i => ((base.rot + st * i) % 4 + 4) % 4; }
-  if (attrs.includes('count')) { const up = rng() < .6; rule.count = i => up ? 1 + i : 4 - i; }
-  if (attrs.includes('color')) { const L = pick(rng, [2, 3]); rule.color = i => pools.color[i % L]; }
-  if (attrs.includes('shape')) { const L = pick(rng, [2, 3]); rule.shape = i => pools.shape[i % L]; }
+  const base = { shape: pools.shape[0], color: pools.color[0], rot: attrs.includes('rot') ? Math.floor(rng() * 4) : 0, count: 1 }, rule = {}, why = [];
+  if (attrs.includes('rot')) { const st = pick(rng, [1, -1, 2]); rule.rot = i => ((base.rot + st * i) % 4 + 4) % 4; why.push(st === 2 ? 'flips a half turn each step' : `turns a quarter turn ${st > 0 ? 'clockwise' : 'counterclockwise'} each step`); }
+  if (attrs.includes('count')) { const up = rng() < .6; rule.count = i => up ? 1 + i : 4 - i; why.push(up ? 'adds one each step' : 'loses one each step'); }
+  if (attrs.includes('color')) { const L = pick(rng, [2, 3]); rule.color = i => pools.color[i % L]; why.push(`colors repeat ${pools.color.slice(0, L).map(colorWord).join(', ')}`); }
+  if (attrs.includes('shape')) { const L = pick(rng, [2, 3]); rule.shape = i => pools.shape[i % L]; why.push(`shapes repeat ${pools.shape.slice(0, L).map(x => icon(x, INK)).join(' ')}`); }
   const tile = i => { const t = { ...base }; for (const a in rule) t[a] = rule[a](i); return t; };
   const ans = tile(3);
-  return { seq: [0, 1, 2].map(tile), ans, opts: tileOptions(rng, ans, attrs, pools, 3) };
+  return { seq: [0, 1, 2].map(tile), ans, opts: tileOptions(rng, ans, attrs, pools, 3), why: why.join(' and '), hard: attrs.length > 1 };
 }
 function makeMatrix(rng, n, fams) {
   const attrs = shuffle(rng, fams).slice(0, 2), pools = tilePools(rng, attrs, 3);
@@ -399,7 +435,7 @@ function drawPoly(P, cells, x, y, unit, angle, mirror, col) {
 const REAL_WORDS = 'anchor apple arrow badge baker bandit basket beach berry blade blank blanket blast bloom board bonus bottle brain brave bread brick bride brush bucket butter button cabin camel candle candy cannon canoe carpet carrot castle cattle chair chalk charm cheese cherry chess chest chicken circle claim cliff clock cloud clover coach coast copper cotton couch crane crayon crown dance dart desert desk diamond dinner doctor dollar donkey dragon drama dream dress drift drum eagle earth elbow engine fable fancy farm feast feather fence field finger flame flash fleet flood flour flower flute focus forest forge frame frost fruit gallon garden ghost giant glove goose grape grass gravel guitar hammer harbor heart hockey honey horse hotel house island jacket jelly jewel judge juice jungle kettle kidney kitten knife ladder lamp lantern lemon level light lizard lobster lunch magic maple marble market meadow medal metal mirror model money monkey motor mouse music napkin needle noble ocean olive onion orange orbit oyster paddle paint panel paper parrot party pebble pencil pepper piano pillow pilot pirate planet plank plant plate plum pocket point potato power pretzel prize pupil puppy puzzle queen quilt rabbit racket radio rain ranch razor ribbon river robin rocket royal ruler saddle sail salad salt saucer scarf scooter shadow shark sheep shell shield shirt shoe silver skate sleeve slope smile snake sock solar spice sponge spoon sport squad stamp statue storm stove sugar summer sunset sweater sword table tablet tackle temple thunder ticket tiger timber toast token tomato tonic towel tower track train travel trophy truck tulip tunnel turkey turtle valley velcro velvet violin waffle wagon wallet walnut walrus water whale wheat wheel whistle window winter wizard wolf yacht zebra'.split(' ');
 const FAKE_WORDS = 'aarth ancher applo arrew bandot baver blede blide bliom blist blonk boach botor bourd braad brein briad broin buard buckit butten buttir canie canoo carpat carrat cattla cemel cenoe cheefe chickin chiir chirm chocken chuss cleim clober cloed clorer coech costle cottol crewn cunnon dactor dalrus dask demert diabond diger dinnir doard dragin dregon droft drul duamond ducket dunset durtle eigle elbos engane engino engire enion errow faather fabla fablet facus faeld feither fenca feust fible finged firge flama flane flaur fleut flouk foble focas foces focket fokest fonce forist frait frast froit fuather funce gadder gaitar garded garrot gellon geose gerden ghist giint glofe gonus goofe grafel grapel gravol gravul grepe grupe guant gurden gurtle guutar harbar himmer horso hoteg inion islind jaice jecket jedge jerel jewil jewol judga juwel kadge karpet keadow keart kence kepper ketten kittek knine korse kotton lanturn ledder lemen lemop leson liant loard loast lobstar lobstor loght lomp lontern luntern luvel luzard maadow meagow mebal medul memal mepper mesk metat metol metor mircle mirrir mizard modeg morest motar moufe moupe murble mutor nanch nasket nepkin nocket nocus nollar nomato nuble oagle oarth oceap onien onive onuon opple orbig orean otion ovean packle paddlo pallow paont papkin patato pazzle pencel peppor piane pikot pilut pirabe plake plaket plote pockot poent pollow poncil porrot potaso pretzed pretzeg pretzep pubble puncil rabbut racken rackep rackot rallon ralt ranio ravio rebbon rettle ricket rillow rivar rodio rofin rorin rucket rulen ruver saacer sael sanel sanoe saucar saucen saucir scioter scootep seedle shadaw shiold shiuld siant silvor skote soast sobar socus sopper speon spide spongo starm statuo stutue sucket sufar sunsep sunsit susar swird tadge talip tanel taple tarrot tartle tecket thundir tible tickat tifer tigen tigep timbar tinger tinnel tircle tockle toger tomapo tonir tonis tonnel towal towil towur tradel traval trock tuckle tulap tulop tunnul turip uarth unchor vaint valt vaple varpet viofin vodel vomato voose vuolin waler wallut walnat watar welnut wheut windod wulrus wundow wuter'.split(' ');
 
-/* ---------- The drill pool (7 of these are picked each day, at most two per category) ---------- */
+/* ---------- The drill pool (7 of these are picked each day, at most two per category; side games are never picked) ---------- */
 const DRILLS = [
 {
   id: 'blackout', name: 'Blackout', skill: 'Reaction time', cat: 'react',
@@ -516,13 +552,13 @@ const DRILLS = [
 {
   id: 'headcount', name: 'Headcount', skill: 'Rapid counting', cat: 'attention',
   variant: r => ({ modes: [0, 1, 2].map(() => pick(r, ['shape', 'color', 'both'])) }),
-  how: () => 'A crowd of shapes drifts across the screen for a few seconds. Count only the ones we ask for, then punch in your number. Three rounds, each one quicker.',
+  how: () => 'A crowd of shapes drifts across the screen for a few seconds. Each round counts one thing: a SHAPE in any color, a COLOR in any shape, or a shape AND color together. The round tells you which before it starts. Three rounds, each one quicker.',
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .085), r = s / 2, pad = 4;
     const ROUNDS = [{ n: 15, ms: 4000, max: 7 }, { n: 19, ms: 3500, max: 9 }, { n: 23, ms: 3000, max: 11 }];
-    let ri = 0, pts = 0, exact = 0, items = [], phase = 'intro', k, isTarget, ts, tc, phaseStart = 0, last = null;
+    let ri = 0, pts = 0, exact = 0, items = [], phase = 'intro', k, isTarget, ts, tc, mode, phaseStart = 0, last = null;
     function setup() {
-      const cfg = ROUNDS[ri], mode = v.modes[ri];
+      const cfg = ROUNDS[ri]; mode = v.modes[ri];
       ts = pick(rng, SHAPES); tc = pick(rng, COLOR_NAMES); k = 3 + Math.floor(rng() * (cfg.max - 2));
       const otherS = SHAPES.filter(x => x !== ts), otherC = COLOR_NAMES.filter(x => x !== tc);
       const make = i => {
@@ -539,9 +575,9 @@ const DRILLS = [
         const a = rng() * TAU, sp = W * (.06 + rng() * .1), [shape, color] = make(i);
         items.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, shape, color });
       }
-      const label = mode === 'shape' ? `every ${icon(ts, 'yellow')} ${ts}, any color` : mode === 'color' ? `everything ${icon('block', tc)} ${tc}` : `the ${shapeLabel(ts, tc)}`;
+      const label = mode === 'shape' ? `every ${icon(ts, INK)} ${ts}. Shape only, any color.` : mode === 'color' ? `everything ${colorWord(tc)}. Color only, any shape.` : `only ${colorWord(tc)} ${icon(ts, tc)} ${plural(ts)}. Shape and color both have to match.`;
       phase = 'intro'; phaseStart = performance.now(); api.timer(1); api.hideControls();
-      api.prompt(`Round ${ri + 1} of 3. Count ${label}.`, true);
+      api.prompt(`Round ${ri + 1} of 3. Count ${label}`, true);
     }
     function answer(n) {
       if (phase !== 'ask') return;
@@ -554,8 +590,11 @@ const DRILLS = [
       if (last == null) last = now; const dt = Math.min(.05, (now - last) / 1000); last = now;
       const cfg = ROUNDS[ri], el = now - phaseStart; P.clear();
       if (phase === 'intro') {
-        P.text('GET READY', W / 2, H / 2, css('--ink'), 8);
-        if (el > 1700) { phase = 'crowd'; phaseStart = now; }
+        P.text(mode === 'shape' ? 'COUNT THE SHAPE' : mode === 'color' ? 'COUNT THE COLOR' : 'SHAPE AND COLOR', W / 2, H * .2, css('--muted'), 8);
+        if (mode === 'color') P.text(tc.toUpperCase(), W / 2, H * .52, PAL[tc], 18);
+        else P.spr(ts, mode === 'shape' ? INK : tc, Math.round(W * .3), W / 2, H * .52);
+        P.text(mode === 'shape' ? 'ANY COLOR' : mode === 'color' ? 'ANY SHAPE' : 'BOTH MUST MATCH', W / 2, H * .84, css('--muted'), 8);
+        if (el > 2300) { phase = 'crowd'; phaseStart = now; }
         return;
       }
       if (phase === 'crowd') {
@@ -579,9 +618,10 @@ const DRILLS = [
 {
   id: 'foe', name: 'Friend or Foe', skill: 'Impulse control', cat: 'control',
   variant: r => { const type = pick(r, ['shape', 'color', 'except']); return { type, shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES) }; },
-  how: v => v.type === 'shape' ? `Shapes pop up all over the grid. Tap only the ${icon(v.shape, 'yellow')} ${plural(v.shape)}, whatever color. Tap anything else and it's a foul.`
-    : v.type === 'color' ? `Shapes pop up all over the grid. Tap only the ${icon('block', v.color)} ${v.color} ones. Tap anything else and it's a foul.`
-    : `Shapes pop up all over the grid. Tap every one of them except the ${icon('block', v.color)} ${v.color} ones.`,
+  rule: v => v.type === 'shape' ? `Tap ${icon(v.shape, INK)} ${plural(v.shape)}. Shape only, any color.`
+    : v.type === 'color' ? `Tap anything ${colorWord(v.color)}. Color only, any shape.`
+    : `Tap everything except ${colorWord(v.color)}. Color only, any shape.`,
+  how(v) { return `Shapes pop up all over the grid. ${this.rule(v)} Tap the wrong one and it's a foul.`; },
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, D = 24000, pad = 6, cell = (W - 2 * pad) / 3, s = Math.round(cell * .62);
     const goP = v.type === 'except' ? .78 : .68;
@@ -599,7 +639,8 @@ const DRILLS = [
     }
     const goTotal = sched.filter(x => x.go).length; let hits = 0, fouls = 0;
     const start = performance.now(), fx = [];
-    const tally = () => api.prompt(`${hits} caught · ${fouls} foul${fouls === 1 ? '' : 's'}`);
+    const rule = DRILLS.find(d => d.id === 'foe').rule(v);
+    const tally = () => api.prompt(`${rule}<br>${hits} caught · ${fouls} foul${fouls === 1 ? '' : 's'}`, true);
     tally();
     api.loop(now => {
       const el = now - start; api.timer(1 - el / D); P.clear();
@@ -626,22 +667,24 @@ const DRILLS = [
 {
   id: 'odd', name: 'Odd One Out', skill: 'Visual search', cat: 'attention',
   variant: r => ({ base: pick(r, ['fan', 'drop', 'dome']) }),
-  how: () => 'Every grid has exactly one shape that is a little bit different: a shade off, a size off, turned the wrong way, or a different shape. Tap it. Grids get bigger, and wrong taps cost two seconds.',
+  how: () => `Every grid has exactly one shape that is a little bit different: ${CB ? '' : 'a shade off, '}a size off, turned the wrong way, or a different shape. Tap it. Grids get bigger, and from the 8th grid on the rest of the crowd starts mixing things up too. Wrong taps cost two seconds.`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, SIZES = [3, 4, 4, 5, 5, 6, 6, 7, 7, 8], D = 30000, pad = 4;
+    const P = api.px(), { W, H } = P, rng = api.rng, SIZES = [3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9], D = 30000, pad = 4;
     const NEAR = [['red', 'pink'], ['blue', 'purple'], ['green', 'cyan'], ['orange', 'yellow'], ['pink', 'purple']];
     const SHAPE_PAIRS = [['dome', 'drop'], ['bowtie', 'hourglass'], ['petal', 'drop'], ['clover', 'gate'], ['ring', 'gate']];
     let found = 0, ri = 0, board, penalty = 0, fx = [];
     function make() {
       const n = SIZES[Math.min(ri, SIZES.length - 1)], cell = (W - 2 * pad) / n, s = Math.max(7, Math.round(cell * .72)), odd = Math.floor(rng() * n * n);
-      const kind = pick(rng, ['color', 'size', 'turn', 'shape']);
+      const kind = pick(rng, CB ? ['size', 'turn', 'shape'] : ['color', 'size', 'turn', 'shape']), noisy = ri >= 7;
       let a, b;
       if (kind === 'color') { const [c1, c2] = shuffle(rng, pick(rng, NEAR)); const sh = pick(rng, SHAPES); a = { shape: sh, color: c1, s, rot: 0 }; b = { ...a, color: c2 }; }
       else if (kind === 'size') { const c = pick(rng, COLOR_NAMES), sh = pick(rng, SHAPES); a = { shape: sh, color: c, s: s - 2, rot: 0 }; b = { ...a, s: s + 1 }; }
       else if (kind === 'turn') { const c = pick(rng, COLOR_NAMES), sh = v.base; a = { shape: sh, color: c, s, rot: 0 }; b = { ...a, rot: pick(rng, [Math.PI / 2, Math.PI, -Math.PI / 2]) }; }
       else { const [s1, s2] = shuffle(rng, pick(rng, SHAPE_PAIRS)); const c = pick(rng, COLOR_NAMES); a = { shape: s1, color: c, s, rot: 0 }; b = { ...a, shape: s2 }; }
       const items = [];
-      for (let i = 0; i < n * n; i++) items.push({ x: pad + cell * (i % n + .5), y: pad + cell * (Math.floor(i / n) + .5), ...(i === odd ? b : a) });
+      /* Late grids add a decoy layer: every tile varies in something that doesn't matter (turn, or color on turn grids), so the odd one has to be found under the noise. */
+      const noise = () => !noisy ? {} : kind === 'turn' ? { color: pick(rng, COLOR_NAMES) } : { rot: Math.floor(rng() * 4) * Math.PI / 2 };
+      for (let i = 0; i < n * n; i++) items.push({ x: pad + cell * (i % n + .5), y: pad + cell * (Math.floor(i / n) + .5), ...(i === odd ? b : a), ...noise() });
       board = { n, odd, items, cell };
     }
     const start = performance.now();
@@ -657,7 +700,7 @@ const DRILLS = [
       const p = P.pos(e), n = board.n, ci = Math.floor((p.x - pad) / board.cell), rj = Math.floor((p.y - pad) / board.cell);
       if (ci < 0 || rj < 0 || ci >= n || rj >= n) return;
       const i = rj * n + ci, it = board.items[i];
-      if (i === board.odd) { found++; ri++; fx.push({ x: it.x, y: it.y, c: board.cell, ok: true, t: performance.now() }); make(); api.prompt(`${found} found. Keep going.`); }
+      if (i === board.odd) { found++; ri++; fx.push({ x: it.x, y: it.y, c: board.cell, ok: true, t: performance.now() }); make(); api.prompt(ri === 7 ? `${found} found. Now the crowd mixes it up.` : `${found} found. Keep going.`); }
       else { penalty += 2000; fx.push({ x: it.x, y: it.y, c: board.cell, ok: false, t: performance.now() }); }
     });
     make();
@@ -665,7 +708,7 @@ const DRILLS = [
 },
 {
   id: 'intercept', name: 'Intercept', skill: 'Anticipation', cat: 'react',
-  variant: r => ({ shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), fog: r() < .5 ? .5 : .42 }),
+  variant: r => ({ shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), fog: r() < .5 ? .4 : .33 }),
   how: v => `A ${v.shape} flies toward the yellow line on the right, then vanishes into the static. Tap where it will cross the line before it gets there. It can bounce off the top and bottom. Five throws.`,
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .07), r = s / 2, pad = 4, fogX = Math.round(W * v.fog), endX = W - pad - 3, N = 5;
@@ -710,16 +753,17 @@ const DRILLS = [
 {
   id: 'middle', name: 'Middle Arrow', skill: 'Focus under distraction', cat: 'control',
   variant: r => ({ vertical: r() < .4, flip: r() < .5 }),
-  how: v => `Five arrows, one row. Which way is the middle one pointing? The others are trying to fake you out.${v.flip ? ` Twist: when the arrows are ${icon('arrow', 'pink')} pink, answer the opposite way.` : ''} Use the buttons or arrow keys.`,
+  how: v => `Five arrows in a ${v.vertical ? 'column' : 'row'}. Which way is the middle one pointing: up, down, left or right? The others are trying to fake you out.${v.flip ? ` Twist: when the arrows are ${colorWord('pink')}, answer the opposite way.` : ''} Use the buttons or arrow keys.`,
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, D = 25000, s = Math.round(W / 7), gap = Math.round(W / 40);
-    const A = v.vertical ? [-Math.PI / 2, Math.PI / 2] : [Math.PI, 0];
+    /* Left, up, down, right. OPP maps each to its opposite. */
+    const A = [Math.PI, -Math.PI / 2, Math.PI / 2, 0], OPP = [3, 2, 1, 0], NAMES = ['Left', 'Up', 'Down', 'Right'];
     let right = 0, wrong = 0, cur = null, locked = true, flashCol = null;
     function next() {
       locked = true; cur = null; flashCol = null;
       api.later(() => {
-        const dir = rng() < .5 ? 0 : 1, cong = rng() < .45, pinkT = v.flip && rng() < .3;
-        cur = { dir, fl: cong ? dir : 1 - dir, pink: pinkT, answer: pinkT ? 1 - dir : dir }; locked = false;
+        const dir = Math.floor(rng() * 4), cong = rng() < .35, pinkT = v.flip && rng() < .3;
+        cur = { dir, fl: cong ? dir : pick(rng, [0, 1, 2, 3].filter(d => d !== dir)), pink: pinkT, answer: pinkT ? OPP[dir] : dir }; locked = false;
       }, 140);
     }
     api.loop(now => {
@@ -737,59 +781,23 @@ const DRILLS = [
       else { wrong++; flashCol = 'red'; locked = true; api.later(next, 450); }
       api.prompt(`${right} right · ${wrong} wrong`);
     }
-    api.showButtons([{ html: icon('arrow', 'yellow', A[0]), label: v.vertical ? 'Up' : 'Left', fn: () => answer(0) }, { html: icon('arrow', 'yellow', A[1]), label: v.vertical ? 'Down' : 'Right', fn: () => answer(1) }]);
-    const keys = v.vertical ? ['ArrowUp', 'ArrowDown'] : ['ArrowLeft', 'ArrowRight'];
+    api.showButtons(A.map((a, d) => ({ html: icon('arrow', 'yellow', a), label: NAMES[d], fn: () => answer(d) })), 'four');
+    const keys = ['ArrowLeft', 'ArrowUp', 'ArrowDown', 'ArrowRight'];
     api.on(window, 'keydown', e => { const i = keys.indexOf(e.code); if (i >= 0) { e.preventDefault(); answer(i); } });
     api.prompt('Which way is the middle arrow pointing?');
     const start = performance.now();
-    api.later(() => api.done((right - wrong) / 32 * 100, `${right} right · ${wrong} wrong`), D);
-    next();
-  }
-},
-{
-  id: 'ink', name: 'Ink Check', skill: 'Inhibition', cat: 'control',
-  variant: r => ({ mode: pick(r, ['ink', 'ink', 'word', 'switch']) }),
-  how: v => v.mode === 'ink' ? 'A color word appears, painted in some color. Tap the color of the paint, not the word.'
-    : v.mode === 'word' ? 'A color word appears, painted in some color. Tap the color the word says, not the paint.'
-    : 'A color word appears, painted in some color. Above it, a cue says PAINT or WORD. Follow the cue.',
-  run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, D = 25000, C = ['red', 'yellow', 'green', 'blue'];
-    let right = 0, wrong = 0, cur = null, locked = true, fb = null;
-    function next() {
-      locked = true; cur = null;
-      api.later(() => {
-        const word = pick(rng, C), cong = rng() < .25, inkC = cong ? word : pick(rng, C.filter(c => c !== word));
-        const cue = v.mode === 'switch' ? (rng() < .5 ? 'ink' : 'word') : v.mode;
-        cur = { word, inkC, cue, answer: cue === 'ink' ? inkC : word }; locked = false; fb = null;
-      }, 160);
-    }
-    api.loop(now => {
-      api.timer(1 - (now - start) / D); P.clear();
-      if (!cur) return;
-      if (v.mode === 'switch') P.text(cur.cue === 'ink' ? 'PAINT' : 'WORD', W / 2, H * .3, css('--muted'), 8);
-      P.text(cur.word.toUpperCase(), W / 2, H / 2, PAL[cur.inkC], 16);
-      if (fb) P.frame(6, 6, W - 12, H - 12, fb, 2);
-    });
-    function answer(c) {
-      if (locked || !cur) return;
-      locked = true;
-      if (c === cur.answer) { right++; fb = PAL.green; api.later(next, 100); } else { wrong++; fb = PAL.red; api.later(next, 450); }
-      api.prompt(`${right} right · ${wrong} wrong`);
-    }
-    api.showButtons(C.map(c => ({ html: icon('block', c), label: c, fn: () => answer(c) })), 'four');
-    api.prompt(v.mode === 'word' ? 'Tap the color the word says.' : v.mode === 'ink' ? 'Tap the paint color.' : 'Follow the cue above the word.');
-    const start = performance.now();
-    api.later(() => api.done((right - wrong) / 26 * 100, `${right} right · ${wrong} wrong`), D);
+    api.later(() => api.done((right - wrong) / 28 * 100, `${right} right · ${wrong} wrong`), D);
     next();
   }
 },
 {
   id: 'echo', name: 'Echo', skill: 'Sequence memory', cat: 'memory',
   variant: r => ({ grid: r() < .6 ? 3 : 4, reverse: r() < .3, color: pick(r, ['cyan', 'pink', 'green', 'orange']) }),
-  how: v => `Tiles light up one after another. Tap them back in the ${v.reverse ? 'reverse order, last one first' : 'same order'}. Each round adds a tile. Two mistakes and you're out.`,
+  how: v => `Tiles light up one after another. Tap them back in the ${v.reverse ? 'reverse order, last one first' : 'same order'}. Each pattern you nail adds a tile; a miss drops one. Clear as many as you can in forty seconds.`,
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, n = v.grid, pad = 8, cell = (W - 2 * pad) / n, ts = Math.round(cell - 6);
-    let len = 3, best = 2, lives = 2, seq = [], phase = 'watch', litIdx = -1, input = [], fb = null;
+    const D = 40000, start = performance.now();
+    let len = 3, best = 0, pts = 0, cleared = 0, seq = [], phase = 'watch', litIdx = -1, input = [], fb = null;
     function round() {
       seq = []; let prev = -1;
       for (let i = 0; i < len; i++) { let c; do { c = Math.floor(rng() * n * n); } while (c === prev); seq.push(c); prev = c; }
@@ -797,15 +805,17 @@ const DRILLS = [
       seq.forEach((c, i) => { api.later(() => { litIdx = c; }, 500 + i * 600); api.later(() => { litIdx = -1; }, 500 + i * 600 + 420); });
       api.later(() => { phase = 'repeat'; api.prompt(v.reverse ? 'Now tap them backwards.' : 'Your turn.'); }, 500 + len * 600);
     }
-    api.loop(() => {
+    /* Points are the length of each cleared pattern; 25 (3+4+5+6+7) is a perfect run in forty seconds. */
+    const finish = () => api.done(pts / 25 * 100, cleared ? `${cleared} cleared · longest ${best}` : 'No patterns cleared');
+    api.loop(now => {
+      const left = D - (now - start); api.timer(left / D);
+      if (left <= 0) { phase = 'over'; finish(); return false; }
       P.clear();
       for (let i = 0; i < n * n; i++) {
         const x = pad + (i % n) * cell + cell / 2, y = pad + Math.floor(i / n) * cell + cell / 2;
         const on = i === litIdx || (fb && fb.cells.includes(i));
         P.spr('block', on ? (fb ? fb.color : v.color) : UI.off, ts, x, y);
       }
-      for (let i = 0; i < 2; i++) P.spr('dome', i < lives ? 'red' : UI.off, 7, W - 8 - i * 10, 6);
-      api.timer(lives / 2);
     });
     api.on(P.canvas, 'pointerdown', e => {
       if (phase !== 'repeat') return;
@@ -814,15 +824,15 @@ const DRILLS = [
       const c = rj * n + ci, want = v.reverse ? seq[seq.length - 1 - input.length] : seq[input.length];
       input.push(c);
       if (c !== want) {
-        lives--; phase = 'fb'; fb = { cells: [c], color: 'red' }; api.prompt(lives ? 'Wrong tile. Same length, new pattern.' : 'Out of lives.');
-        api.later(() => { if (lives > 0) round(); else api.done((best - 2) / 6 * 100, `Longest pattern: ${best}`); }, 900);
+        phase = 'fb'; fb = { cells: [c], color: 'red' }; len = Math.max(3, len - 1); api.prompt(`Wrong tile. Next one is ${len} long.`);
+        api.later(round, 900);
         return;
       }
       litIdx = c; api.later(() => { if (litIdx === c) litIdx = -1; }, 180);
       if (input.length === seq.length) {
-        best = Math.max(best, len); phase = 'fb'; fb = { cells: seq, color: 'green' }; api.prompt(`${len} in a row!`);
-        len++;
-        api.later(() => { if (len > 9) api.done(100, `Longest pattern: ${best}`); else round(); }, 800);
+        best = Math.max(best, len); pts += len; cleared++; phase = 'fb'; fb = { cells: seq, color: 'green' }; api.prompt(`${len} in a row!`);
+        len = Math.min(9, len + 1);
+        api.later(round, 800);
       }
     });
     api.later(round, 400);
@@ -874,9 +884,8 @@ const DRILLS = [
 },
 {
   id: 'nback', name: 'Déjà Vu', skill: 'Working memory', cat: 'memory',
-  variant: r => ({ back: r() < .55 ? 1 : 2 }),
-  how: v => v.back === 1 ? 'Shapes appear one at a time. Tap MATCH (or press Space) when a shape is exactly the same as the one right before it. Same shape and same color.'
-    : 'Shapes appear one at a time. Tap MATCH (or press Space) when a shape is exactly the same as the one two steps back. Same shape and same color.',
+  variant: r => ({ back: pick(r, [2, 2, 3, 3, 4, 5]) }),
+  how: v => `Shapes appear one at a time. Tap MATCH (or press Space) when a shape is exactly the same as the one ${v.back} steps back. Same shape and same color. Today is ${v.back} back.`,
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, N = 20, ON = 1100, OFF = 400, s = Math.round(W * .32), nb = v.back;
     const items = [];
@@ -907,7 +916,7 @@ const DRILLS = [
     }
     api.showButtons([{ html: 'MATCH', label: 'Match', fn: press }], 'one');
     api.on(window, 'keydown', e => { if (e.code === 'Space') { e.preventDefault(); press(); } });
-    api.prompt(nb === 1 ? 'Same as the one right before?' : 'Same as the one two back?');
+    api.prompt(`Same as the one ${nb} back?`);
     api.later(() => api.done((hits - fa * .7) / matches * 100, `${hits} of ${matches} matches · ${fa} false alarm${fa === 1 ? '' : 's'}`), 600 + N * (ON + OFF) + 200);
   }
 },
@@ -986,7 +995,8 @@ const DRILLS = [
     api.on(window, 'keydown', e => { if (e.code === 'ArrowLeft') answer('a'); if (e.code === 'ArrowRight') answer('b'); });
     api.prompt('Which color had more?');
     const start = performance.now();
-    api.later(() => api.done((right - wrong) / 20 * 100, `${right} right · ${wrong} wrong`), D);
+    /* About 15 flashes fit in the time. 14 right is a perfect score; a wrong answer costs half a right one. */
+    api.later(() => api.done((right - wrong * .5) / 14 * 100, `${right} right · ${wrong} wrong`), D);
     next();
   }
 },
@@ -1028,28 +1038,31 @@ const DRILLS = [
   how: v => `Three tiles follow a pattern. Pick the tile that comes next. Today's patterns play with ${famList(v.fams)}. Later puzzles mix two rules at once.`,
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, D = 30000, pad = 6, gap = 5, ts = Math.floor((W - 2 * pad - 3 * gap) / 4), os = Math.min(ts * 1.15, (W - 2 * pad - 2 * gap * 2) / 3);
-    let level = 0, right = 0, wrong = 0, cur, locked = false, fb = null;
+    let level = 0, right = 0, wrong = 0, cur, locked = false, fb = null, paused = 0, pausedAt = 0, over = false;
     const optX = i => W / 2 + (i - 1) * (os + gap * 2), optY = H * .74;
-    function next() { cur = makeSeries(rng, level, v.fams); locked = false; fb = null; }
+    function next() { if (pausedAt) { paused += performance.now() - pausedAt; pausedAt = 0; } cur = makeSeries(rng, level, v.fams); locked = false; fb = null; api.prompt(`Puzzle ${level + 1}${cur.hard ? ', two rules at once' : ''}. What comes next?`); }
     const start = performance.now();
+    /* The clock stops while the answer and its rule are on screen. */
     api.loop(now => {
-      api.timer(1 - (now - start) / D); P.clear();
-      for (let i = 0; i < 4; i++) drawTile(P, i < 3 ? cur.seq[i] : (fb ? cur.ans : null), pad + ts / 2 + i * (ts + gap), H * .27, ts, i === 3 ? (fb ? fb.col : css('--edge')) : null);
+      const el = (pausedAt || now) - start - paused; api.timer(1 - el / D);
+      if (el >= D && !over) { over = true; api.done((right - wrong * .5) / 9 * 100, `${right} right · ${wrong} wrong`); return false; }
+      P.clear();
+      P.text(cur.hard ? 'HARD · TWO RULES' : 'ONE RULE', pad, H * .07, css('--muted'), 6, 'left');
+      for (let i = 0; i < 4; i++) drawTile(P, i < 3 ? cur.seq[i] : (fb ? cur.ans : null), pad + ts / 2 + i * (ts + gap), H * .27, ts, i === 3 ? (fb ? PAL.green : css('--edge')) : null);
       P.rect(pad, H * .5, W - 2 * pad, 1, css('--rule'));
-      cur.opts.forEach((t, i) => drawTile(P, t, optX(i), optY, os, fb && fb.pick === i ? fb.col : null));
+      cur.opts.forEach((t, i) => drawTile(P, t, optX(i), optY, os, fb && fb.pick === i ? fb.col : fb && t === cur.ans ? PAL.green : null));
     });
     api.on(P.canvas, 'pointerdown', e => {
       if (locked) return;
       const p = P.pos(e), i = cur.opts.findIndex((_, j) => Math.abs(p.x - optX(j)) <= os / 2 + gap && Math.abs(p.y - optY) <= os / 2 + gap);
       if (i < 0) return;
-      const ok = cur.opts[i] === cur.ans; locked = true; level++;
+      const ok = cur.opts[i] === cur.ans; locked = true; level++; pausedAt = performance.now();
       if (ok) right++; else wrong++;
       fb = { pick: i, col: ok ? PAL.green : PAL.red };
-      api.prompt(`${right} right · ${wrong} wrong`);
-      api.later(next, ok ? 350 : 900);
+      const why = cur.why.charAt(0).toUpperCase() + cur.why.slice(1);
+      api.prompt(`${ok ? 'Right.' : 'Not quite, the answer is outlined.'} ${why}.<br>${right} right · ${wrong} wrong`, true);
+      api.later(next, ok ? 1100 : 2600);
     });
-    api.prompt('What comes next? Tap it below.');
-    api.later(() => api.done((right - wrong * .5) / 9 * 100, `${right} right · ${wrong} wrong`), D);
     next();
   }
 },
@@ -1649,7 +1662,7 @@ const EMO = (() => {
   const level = l => cats.filter(c => c.level === l);
   return { cats, fits, level, fitsAny: (e, list) => list.some(c => fits.get(e).has(c.id)) };
 })();
-const LEVEL_COL = { 1: PAL.yellow, 2: PAL.green, 3: PAL.cyan, 4: PAL.purple };
+const LEVEL_COL = { get 1() { return PAL.yellow; }, get 2() { return PAL.green; }, get 3() { return PAL.cyan; }, get 4() { return CB ? PAL.pink : PAL.purple; } };
 
 /* One connection from each level, four members each, none of them arguably in another group on the board. */
 function linkPuzzle(rng) {
@@ -1661,12 +1674,12 @@ function linkPuzzle(rng) {
 }
 
 DRILLS.push({
-  id: 'linkup', name: 'Link Up', skill: 'Pattern finding', cat: 'links',
+  id: 'linkup', name: 'Link Up', skill: 'Pattern finding', cat: 'links', side: true,
   variant: () => ({}),
-  how: () => 'Sixteen emoji hide four groups of four. Tap four that share a link, then Submit. One group is obvious, one is sneaky wordplay. Wrong guesses cost five seconds.',
+  how: () => 'Sixteen emoji hide four groups of four. Tap four that share a link, then Submit. One group is obvious, one is sneaky wordplay. No clock, but four wrong guesses ends it.',
   run(api) {
-    const D = 45000, PENALTY = 5000, groups = linkPuzzle(api.rng), start = performance.now();
-    let tiles = shuffle(api.rng, groups.flatMap(g => g.members)), sel = [], solved = [], mistakes = 0, penalty = 0, over = false;
+    const MAX_MISS = 4, groups = linkPuzzle(api.rng);
+    let tiles = shuffle(api.rng, groups.flatMap(g => g.members)), sel = [], solved = [], mistakes = 0, over = false;
     const tried = new Set(), board = document.createElement('div');
     board.className = 'lk'; api.stage.appendChild(board);
     const groupOf = e => groups.find(g => g.members.includes(e));
@@ -1675,7 +1688,7 @@ DRILLS.push({
         + tiles.map(e => `<button class="lk-tile${sel.includes(e) ? ' sel' : ''}${shake && sel.includes(e) ? ' shake' : ''}" data-e="${e}">${e}</button>`).join('');
       board.querySelectorAll('.lk-tile').forEach(b => b.addEventListener('pointerdown', ev => { ev.preventDefault(); toggle(b.dataset.e); }));
     }
-    const status = msg => api.prompt(`${msg ? msg + ' ' : ''}${solved.length} of 4 found${mistakes ? ` · ${mistakes} miss${mistakes === 1 ? '' : 'es'}` : ''}.`);
+    const status = msg => { api.timer(1 - mistakes / MAX_MISS); api.prompt(`${msg ? msg + ' ' : ''}${solved.length} of 4 found · ${MAX_MISS - mistakes} guess${MAX_MISS - mistakes === 1 ? '' : 'es'} left.`); };
     function toggle(e) {
       if (over) return;
       if (sel.includes(e)) sel = sel.filter(x => x !== e); else if (sel.length < 4) sel.push(e);
@@ -1684,10 +1697,10 @@ DRILLS.push({
     function lock(g) { solved.push(g); tiles = tiles.filter(e => !g.members.includes(e)); }
     function finish(win) {
       over = true; sel = []; api.hideControls();
-      const found = solved.length, left = Math.max(0, D - (performance.now() - start) - penalty);
-      groups.filter(g => !solved.includes(g)).forEach(lock); draw(); api.timer(left / D);
-      api.prompt(win ? 'All four. Nicely linked.' : 'Time. Here are the groups you missed.');
-      api.later(() => api.done(found * 22 + (win ? left / D * 12 : 0), `${found} of 4 groups · ${mistakes} miss${mistakes === 1 ? '' : 'es'}`), win ? 1300 : 2600);
+      const found = solved.length;
+      groups.filter(g => !solved.includes(g)).forEach(lock); draw();
+      api.prompt(win ? 'All four. Nicely linked.' : 'Out of guesses. Here are the groups you missed.');
+      api.later(() => api.done(found * 25 - mistakes * 5, `${found} of 4 groups · ${mistakes} miss${mistakes === 1 ? '' : 'es'}`), win ? 1300 : 3200);
     }
     function submit() {
       if (over) return;
@@ -1700,17 +1713,13 @@ DRILLS.push({
         if (solved.length === 3) { lock(groups.find(x => !solved.includes(x))); draw(); finish(true); return; }
         draw(); status(`${g.cat.label}!`); return;
       }
-      mistakes++; penalty += PENALTY;
+      mistakes++;
       const most = Math.max(...groups.map(x => sel.filter(e => x.members.includes(e)).length));
-      draw(true); status(most === 3 ? 'One away. Minus five seconds.' : 'Not a group. Minus five seconds.');
+      draw(true); status(most === 3 ? 'One away.' : 'Not a group.');
+      if (mistakes >= MAX_MISS) finish(false);
     }
     api.showButtons([{ html: 'Shuffle', label: 'Shuffle', fn: () => { if (!over) { tiles = shuffle(Math.random, tiles); draw(); } } }, { html: 'Submit', label: 'Submit', fn: submit }]);
     api.on(window, 'keydown', e => { if (e.code === 'Enter') { e.preventDefault(); submit(); } });
-    api.loop(now => {
-      if (over) return false;
-      const left = D - (now - start) - penalty; api.timer(left / D);
-      if (left <= 0) { finish(false); return false; }
-    });
     draw(); status('Find four that share a link.');
   }
 }, {
@@ -1766,7 +1775,7 @@ function newRun(practice) {
 function pickSet(rng) {
   const out = [], per = {};
   for (const d of shuffle(rng, DRILLS)) {
-    if ((per[d.cat] || 0) >= 2) continue;
+    if (d.side || (per[d.cat] || 0) >= 2) continue;
     per[d.cat] = (per[d.cat] || 0) + 1; out.push(d.id);
     if (out.length === PER_DAY) break;
   }
@@ -1775,7 +1784,7 @@ function pickSet(rng) {
 function loadToday() {
   const fresh = newRun(false), saved = store.get(KEY(TODAY), null);
   /* Keep the order saved with today's progress, so a pool change mid-day doesn't reshuffle a set in progress. */
-  if (saved && Array.isArray(saved.order) && saved.order.length === PER_DAY && saved.order.every(id => DRILLS.some(d => d.id === id))) fresh.order = saved.order;
+  if (saved && Array.isArray(saved.order) && saved.order.length === PER_DAY && saved.order.every(id => DRILLS.some(d => d.id === id && !d.side))) fresh.order = saved.order;
   if (saved && Array.isArray(saved.results) && saved.results.every((r, i) => r && r.id === fresh.order[i])) fresh.results = saved.results.slice(0, PER_DAY);
   return fresh;
 }
@@ -1787,13 +1796,25 @@ const TIER_EMOJI = { 4: '🟩', 3: '🟨', 2: '🟧', 1: '🟥' };
 const verdict = s => s >= 95 ? 'PERFECT' : s >= 80 ? 'GREAT' : s >= 60 ? 'GOOD' : s >= 40 ? 'OK' : s >= 20 ? 'OOF' : 'GLITCHED';
 const rank = t => t >= 600 ? 'SUPERHUMAN' : t >= 500 ? 'SHARPSHOOTER' : t >= 400 ? 'QUICK STUDY' : t >= 300 ? 'SWITCHED ON' : t >= 200 ? 'WARMING UP' : 'STILL LOADING';
 
-function show(id) { for (const s of ['home', 'play', 'done']) $('#' + s).hidden = s !== id; window.scrollTo(0, 0); }
+function show(id) {
+  for (const s of ['home', 'play', 'done']) $('#' + s).hidden = s !== id;
+  $('#quit-btn').hidden = !(id === 'play' && S && S.single); $('#dateline').hidden = !$('#quit-btn').hidden;
+  window.scrollTo(0, 0);
+}
 $('#dateline').textContent = `NO. ${DAY} · ${now.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase().replace(/,/g, '')}`;
 const TRIO = () => [css('--A'), css('--B'), css('--C')];
 const tierCol = s => s >= 85 ? css('--A') : s >= 65 ? css('--B') : css('--C');
 const n2 = i => String(i + 1).padStart(2, '0');
 
+/* One drill on its own, outside the daily set: the side game, or a replay. Never saved. */
+function playOne(id) {
+  S = { seedKey: 'practice-' + Math.random().toString(36).slice(2), practice: true, single: true, order: [id], results: [] };
+  introDrill();
+}
+function backHome() { teardown(); card.hidden = true; S = loadToday(); S.results.length >= PER_DAY ? renderDone() : renderHome(); }
+
 function renderHome() {
+  $('#cb-btn').setAttribute('aria-pressed', String(CB)); $('#cb-btn').textContent = `Color-blind palette: ${CB ? 'on' : 'off'}`;
   const done = S.results.length;
   $('#roster').innerHTML = S.order.map((id, i) => {
     const d = drillById(id), res = S.results[i];
@@ -1814,7 +1835,7 @@ function teardown() { cleanups.forEach(f => { try { f(); } catch (e) {} }); clea
 function introDrill() {
   const i = S.results.length, d = drillById(S.order[i]), v = variantFor(d);
   teardown(); show('play');
-  $('#hud-name').textContent = d.name; $('#hud-count').textContent = `${S.practice ? 'PRACTICE · ' : ''}DRILL ${n2(i)} / ${String(PER_DAY).padStart(2, '0')}`;
+  $('#hud-name').textContent = d.name; $('#hud-count').textContent = S.single ? (d.side ? 'SIDE GAME' : 'PRACTICE') : `${S.practice ? 'PRACTICE · ' : ''}DRILL ${n2(i)} / ${String(PER_DAY).padStart(2, '0')}`;
   $('#prog').innerHTML = S.order.map((_, j) => `<i style="background:${j < i ? tierCol(S.results[j].score) : j === i ? css('--A') : ''}"></i>`).join('');
   timerEl.style.transform = 'scaleX(1)'; $('#prompt').textContent = '';
   card.className = 'card';
@@ -1846,7 +1867,7 @@ function makePx() {
 }
 
 function runDrill(d, v, i) {
-  let finished = false;
+  let finished = false; const run = S; cleanups.push(() => { finished = true; });
   const api = {
     rng: rngOf(S.seedKey + ':' + d.id),
     stage: arena,
@@ -1876,14 +1897,22 @@ function runDrill(d, v, i) {
       if (finished) return; finished = true;
       const sc = Math.round(clamp(score, 0, 100));
       setTimeout(() => {
+        if (S !== run) return;
         teardown();
         S.results[i] = { id: d.id, score: sc, detail }; save();
-        const last = S.results.length >= PER_DAY;
+        const last = S.results.length >= S.order.length;
         card.className = 'card result';
         card.innerHTML = `<div class="label">${d.name}</div><div class="score">${sc}<small>/100</small></div><div class="meter"><i style="width:${sc}%;background:${tierCol(sc)}"></i></div><div class="verdict" style="color:${tierCol(sc)}">${verdict(sc)}</div><p>${detail}</p><button class="btn" id="next-btn">${last ? 'See my score' : 'Next drill'}</button>`;
         card.hidden = false; timerEl.style.transform = 'scaleX(0)';
         $('#prompt').textContent = last ? 'That\'s the full set.' : `Up next: ${drillById(S.order[i + 1]).name}`;
         const nb = $('#next-btn'); nb.focus({ preventScroll: true });
+        if (S.single) {
+          nb.textContent = 'Play again'; $('#prompt').textContent = '';
+          nb.insertAdjacentHTML('afterend', '<button class="btn ghost" id="menu-btn" style="margin-top:0">Back</button>');
+          nb.addEventListener('click', () => playOne(d.id));
+          $('#menu-btn').addEventListener('click', backHome);
+          return;
+        }
         nb.addEventListener('click', () => last ? renderDone() : introDrill());
       }, 250);
     }
@@ -1957,8 +1986,12 @@ $('#share-btn').addEventListener('click', () => {
 });
 $('#start-btn').addEventListener('click', () => { S.results.length >= PER_DAY ? renderDone() : introDrill(); });
 $('#practice-btn').addEventListener('click', () => { S = newRun(true); introDrill(); });
+$('#quit-btn').addEventListener('click', backHome);
+$('#side-btn').addEventListener('click', () => playOne('linkup'));
+$('#cb-btn').addEventListener('click', () => { setPalette(!CB); store.set(KEY('cb'), CB); renderHome(); });
 $('#today-btn').addEventListener('click', () => { S = loadToday(); S.results.length >= PER_DAY ? renderDone() : renderHome(); });
 
+setPalette(!!store.get(KEY('cb'), false));
 S = loadToday();
 if (S.results.length >= PER_DAY) renderDone(); else renderHome();
 })();
