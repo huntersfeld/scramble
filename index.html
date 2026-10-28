@@ -215,20 +215,25 @@ const PAL = { red: '#E4573F', orange: '#EE8A3A', yellow: '#F2C54B', green: '#8DB
 /* Drill surfaces in Oxblood: lamp housings, unlit cells, fog, tracks. */
 const UI = { deep: '#1F0A0E', off: '#55222A', fog: '#4A1C23', fogLine: '#6E3038', cell: '#301116', ghost: '#6A3A40', track: '#55222A', zone: '#4A1C23' };
 const COLOR_NAMES = Object.keys(PAL);
+/* Abstract geometric set: half discs, quarter fans and wedges cut from one square. */
+const SQ = (x, y, e = .9) => Math.abs(x) <= e && Math.abs(y) <= e;
 const SH = {
+  dome: (x, y) => (y >= 0 && y <= .9 && Math.abs(x) <= .9) || (y < 0 && x * x + y * y <= .81),
+  bowtie: (x, y) => SQ(x, y) && Math.abs(y) <= Math.abs(x),
+  petal: (x, y) => SQ(x, y) && ((x <= 0) === (y <= 0) || x * x + y * y <= .81),
+  fan: (x, y) => SQ(x, y) && (x + .9) ** 2 + (y - .9) ** 2 <= 3.24,
+  drop: (x, y) => x * x + y * y <= .81 || (x <= 0 && y >= 0 && SQ(x, y)),
+  clover: (x, y) => (Math.abs(x) - .45) ** 2 + (Math.abs(y) - .45) ** 2 <= .2025,
+  cross: (x, y) => SQ(x, y) && (Math.abs(x - y) <= .4 || Math.abs(x + y) <= .4),
+  hourglass: (x, y) => SQ(x, y) && (y <= 0 ? x * x + (y + .9) ** 2 <= .81 : x * x + (y - .9) ** 2 <= .81),
+  ring: (x, y) => { const r = x * x + y * y; return r <= .85 && r >= .2; },
+  gate: (x, y) => SQ(x, y, .88) && x * x + y * y >= .3,
   circle: (x, y) => x * x + y * y <= .92,
-  square: (x, y) => Math.abs(x) <= .82 && Math.abs(y) <= .82,
-  triangle: (x, y) => y >= -.9 && y <= .8 && Math.abs(x) <= (y + .9) / 1.7 * .98,
-  diamond: (x, y) => Math.abs(x) + Math.abs(y) <= .98,
-  star: (x, y) => { const r = Math.hypot(x, y), a = Math.atan2(y, x) + Math.PI / 2, k = ((a / (TAU / 5)) % 1 + 1) % 1; return r <= .4 + .6 * Math.abs(k - .5) * 2; },
-  heart: (x, y) => { const X = x * 1.2, Y = -y * 1.25 + .3, q = X * X + Y * Y - 1; return q * q * q - X * X * Y * Y * Y <= 0; },
-  plus: (x, y) => (Math.abs(x) <= .32 && Math.abs(y) <= .9) || (Math.abs(y) <= .32 && Math.abs(x) <= .9),
-  octagon: (x, y) => Math.abs(x) <= .86 && Math.abs(y) <= .86 && Math.abs(x) + Math.abs(y) <= 1.22,
-  arrow: (x, y) => (x >= -.9 && x <= .05 && Math.abs(y) <= .3) || (x >= -.05 && x <= .95 && Math.abs(y) <= (.95 - x)),
+  arrow: (x, y) => Math.abs(y) <= .85 && x >= -.9 && x + Math.abs(y) >= .1 && x + Math.abs(y) <= .95,
   block: (x, y) => Math.abs(x) <= .95 && Math.abs(y) <= .95
 };
-const SHAPES = ['circle', 'square', 'triangle', 'diamond', 'star', 'heart', 'plus'];
-const plural = s => s + 's';
+const SHAPES = ['dome', 'bowtie', 'petal', 'fan', 'drop', 'clover', 'cross', 'hourglass'];
+const plural = s => /(ch|ss|sh)$/.test(s) ? s + 'es' : s + 's';
 /* Each shape renders once per color and turn at high resolution (2x2 supersampled), then scales down to any size. */
 const SPR = 128, sprCache = new Map();
 function sprite(shape, color, rot = 0) {
@@ -522,12 +527,12 @@ const DRILLS = [
 },
 {
   id: 'odd', name: 'Odd One Out', skill: 'Visual search',
-  variant: r => ({ base: pick(r, ['triangle', 'heart', 'arrow', 'star']) }),
+  variant: r => ({ base: pick(r, ['fan', 'drop', 'dome']) }),
   how: () => 'Every grid has exactly one shape that is a little bit different: a shade off, a size off, turned the wrong way, or a different shape. Tap it. Grids get bigger, and wrong taps cost two seconds.',
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, SIZES = [3, 4, 4, 5, 5, 6, 6, 7, 7, 8], D = 30000, pad = 4;
     const NEAR = [['red', 'pink'], ['blue', 'purple'], ['green', 'cyan'], ['orange', 'yellow'], ['pink', 'purple']];
-    const SHAPE_PAIRS = [['circle', 'octagon'], ['square', 'octagon'], ['diamond', 'star'], ['plus', 'square'], ['heart', 'circle']];
+    const SHAPE_PAIRS = [['dome', 'drop'], ['bowtie', 'hourglass'], ['petal', 'drop'], ['clover', 'gate'], ['ring', 'gate']];
     let found = 0, ri = 0, board, penalty = 0, fx = [];
     function make() {
       const n = SIZES[Math.min(ri, SIZES.length - 1)], cell = (W - 2 * pad) / n, s = Math.max(7, Math.round(cell * .72)), odd = Math.floor(rng() * n * n);
@@ -701,7 +706,7 @@ const DRILLS = [
         const on = i === litIdx || (fb && fb.cells.includes(i));
         P.spr('block', on ? (fb ? fb.color : v.color) : UI.off, ts, x, y);
       }
-      for (let i = 0; i < 2; i++) P.spr('heart', i < lives ? 'red' : UI.off, 7, W - 8 - i * 10, 6);
+      for (let i = 0; i < 2; i++) P.spr('dome', i < lives ? 'red' : UI.off, 7, W - 8 - i * 10, 6);
       api.timer(lives / 2);
     });
     api.on(P.canvas, 'pointerdown', e => {
@@ -849,7 +854,7 @@ const DRILLS = [
 },
 {
   id: 'tally', name: 'Quick Tally', skill: 'Number sense',
-  variant: r => { const [a, b] = shuffle(r, COLOR_NAMES).slice(0, 2); return { a, b, shape: pick(r, ['circle', 'square', 'diamond']) }; },
+  variant: r => { const [a, b] = shuffle(r, COLOR_NAMES).slice(0, 2); return { a, b, shape: pick(r, ['dome', 'drop', 'clover']) }; },
   how: v => `A burst of ${icon(v.shape, v.a)} ${v.a} and ${icon(v.shape, v.b)} ${v.b} ${plural(v.shape)} flashes for a moment. Which color had more? No time to count, go with your gut.`,
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, D = 25000, s = Math.round(W * .06), pad = 6;
