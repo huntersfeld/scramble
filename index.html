@@ -47,7 +47,7 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
 .ico{width:24px;height:24px;vertical-align:-5px}
 
 /* Ripple: a half dome of rings that pops in, rolls outward fast, then keeps drifting slowly. */
-.ripple{position:relative;overflow:hidden;flex:none;display:block;padding:0}
+.ripple{position:relative;overflow:visible;clip-path:inset(-20% -20% 0 -20%);flex:none;display:block;padding:0}
 .ripple>div{position:absolute;left:0;top:0;border-radius:50%;transform-origin:50% 50%}
 
 .hero{position:relative;height:290px;flex:none;border-bottom:2px solid var(--ink);overflow:hidden}
