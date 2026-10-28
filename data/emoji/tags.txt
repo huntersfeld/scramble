@@ -1,0 +1,513 @@
+# Scramble emoji tags: the hand-written layer on top of emojibase-data.
+#
+# Two kinds of lines.
+#
+#   cat <id> | <level 1-4> | <kind> | <label>
+#     A connection a puzzle can ask about. Level is difficulty, the way
+#     Connections colors work: 1 is the obvious group, 4 is the wordplay one.
+#     Kind is what sort of tag it is: noun (what it is), adjective (what it is
+#     like), descriptor (where you find it, what it has or does), or wordplay.
+#
+#   <emoji> <tag> <tag?> ...
+#     One emoji and every connection it belongs to. A tag ending in "?" means
+#     "a player could argue it fits". Maybe tags never put an emoji into a
+#     group, but they do keep it out of any puzzle where it would be ambiguous.
+#
+# The rule that keeps puzzles fair: when an emoji is listed here, it should
+# carry EVERY cat it plausibly fits, colors included. A missing tag is how a
+# puzzle ends up with two right answers. Run tools/build-emoji-data.mjs after
+# editing; it checks every emoji against emojibase and every cat for size.
+
+# ---------- Level 1: what it is, and its color ----------
+cat fruit      | 1 | noun      | Fruit
+cat veg        | 1 | noun      | Vegetables
+cat sweets     | 1 | noun      | Sweet treats
+cat drink      | 1 | noun      | Drinks
+cat fastfood   | 1 | noun      | Fast food
+cat breakfast  | 1 | noun      | Breakfast
+cat bird       | 1 | noun      | Birds
+cat sea        | 1 | noun      | Sea creatures
+cat bug        | 1 | noun      | Creepy crawlies
+cat farm       | 1 | noun      | Farm animals
+cat pet        | 1 | noun      | Pets
+cat car        | 1 | noun      | Road vehicles
+cat boat       | 1 | noun      | Boats
+cat sportball  | 1 | noun      | Sports balls
+cat gear       | 1 | noun      | Sports gear
+cat instrument | 1 | noun      | Instruments
+cat weather    | 1 | noun      | Weather
+cat flower     | 1 | noun      | Flowers
+cat tool       | 1 | noun      | Tools
+cat kitchen    | 1 | noun      | Kitchen gear
+cat clothes    | 1 | noun      | Clothes
+cat hat        | 1 | noun      | Headwear
+cat shoe       | 1 | noun      | Footwear
+cat space      | 1 | noun      | Outer space
+cat building   | 1 | noun      | Buildings
+cat red        | 1 | adjective | Red
+cat orange     | 1 | adjective | Orange
+cat yellow     | 1 | adjective | Yellow
+cat green      | 1 | adjective | Green
+cat blue       | 1 | adjective | Blue
+cat purple     | 1 | adjective | Purple
+cat pink       | 1 | adjective | Pink
+cat brown      | 1 | adjective | Brown
+cat white      | 1 | adjective | White
+cat black      | 1 | adjective | Black
+cat grey       | 1 | adjective | Grey
+
+# ---------- Level 2: what it's like ----------
+cat round      | 2 | adjective | Round
+cat hot        | 2 | adjective | Hot
+cat cold       | 2 | adjective | Cold
+cat sharp      | 2 | adjective | Sharp
+cat loud       | 2 | adjective | Loud
+cat fast       | 2 | adjective | Fast
+cat slow       | 2 | adjective | Slow
+cat beach      | 2 | descriptor | At the beach
+cat party      | 2 | descriptor | At a birthday party
+cat halloween  | 2 | descriptor | Halloween
+cat christmas  | 2 | descriptor | Christmas
+cat wings      | 2 | descriptor | Has wings
+cat wheels     | 2 | descriptor | Has wheels
+cat water      | 2 | descriptor | Lives in water
+
+# ---------- Level 3: what it has or does ----------
+cat shell      | 3 | descriptor | Has a shell
+cat tree       | 3 | descriptor | Grows on trees
+cat egg        | 3 | descriptor | Hatches from an egg
+cat strings    | 3 | descriptor | Has strings
+cat ring       | 3 | descriptor | Has a ring
+cat night      | 3 | descriptor | Comes out at night
+cat holes      | 3 | descriptor | Full of holes
+cat lightup    | 3 | descriptor | Lights up
+cat needles    | 3 | wordplay  | Has needles
+cat trunk      | 3 | wordplay  | Has a trunk
+cat bark       | 3 | wordplay  | Has a bark
+cat keys       | 3 | wordplay  | Has keys
+cat horns      | 3 | wordplay  | Has horns
+cat chess      | 3 | wordplay  | Chess pieces
+
+# ---------- Level 4: wordplay and the sports page ----------
+cat crown      | 4 | wordplay  | Has a crown
+cat scales     | 4 | wordplay  | Has scales
+cat bill       | 4 | wordplay  | Has a bill
+cat bow        | 4 | wordplay  | Has a bow
+cat flyx       | 4 | wordplay  | ___fly
+cat fishx      | 4 | wordplay  | ___fish
+cat ballx      | 4 | wordplay  | ___ball
+cat manx       | 4 | wordplay  | ___man
+cat seax       | 4 | wordplay  | Sea ___
+cat fruitx     | 4 | wordplay  | ___fruit
+cat hotx       | 4 | wordplay  | Hot ___
+cat nfl        | 4 | wordplay  | NFL team names
+cat nba        | 4 | wordplay  | NBA team names
+cat zodiac     | 4 | wordplay  | Zodiac signs
+
+# ---------- Fruit and vegetables ----------
+🍎 fruit red round tree
+🍏 fruit green round tree
+🍐 fruit green tree
+🍊 fruit orange round tree
+🍋 fruit yellow tree
+🍌 fruit yellow tree?
+🍉 fruit red? green? round?
+🍈 fruit green round
+🍇 fruit purple fruitx
+🍓 fruit red
+🫐 fruit blue round?
+🍒 fruit red round tree
+🍑 fruit orange? pink? tree
+🥭 fruit orange? yellow? red? tree
+🍍 fruit yellow? brown? crown
+🥥 fruit brown round tree shell? beach?
+🥝 fruit green brown? fruitx?
+🍅 fruit? veg? red round
+🥑 fruit? veg? green tree
+🥕 veg orange
+🌽 veg yellow
+🥦 veg green
+🥒 veg green seax
+🥬 veg green
+🫑 veg green
+🌶️ veg? red hot hotx?
+🥔 veg brown hotx
+🧅 veg brown? white?
+🧄 veg white
+🍆 veg purple
+🍄 veg? red? white? brown?
+
+# ---------- Food and drink ----------
+🍩 sweets brown? pink? round holes breakfast?
+🍪 sweets brown round christmas?
+🎂 sweets party white? pink? brown? hot?
+🍰 sweets party? white? yellow? pink?
+🧁 sweets party? pink? brown?
+🍦 sweets cold white? brown? beach?
+🍨 sweets cold white? pink? brown?
+🍧 sweets cold white? blue? pink?
+🍫 sweets brown hotx
+🍬 sweets halloween? red? yellow?
+🍭 sweets party? round? pink? red? yellow?
+🍮 sweets yellow? brown?
+🍯 sweets? yellow? orange? brown? breakfast?
+🥧 sweets brown? round
+☕ drink hot brown? white? breakfast? hotx?
+🍵 drink hot green? white?
+🥛 drink white breakfast? cold?
+🧃 drink cold?
+🥤 drink cold? red?
+🍺 drink yellow cold?
+🍷 drink red
+🍹 drink beach cold? orange? pink? red?
+🍸 drink cold?
+🧋 drink cold? brown?
+🍞 breakfast? brown fruitx
+🥐 breakfast brown? yellow?
+🥯 breakfast brown round holes
+🧇 breakfast brown? yellow? holes?
+🥞 breakfast brown? yellow? round? hot?
+🥓 breakfast red? brown? hot?
+🍳 breakfast kitchen hot? white? yellow? black?
+🥣 breakfast kitchen? white? blue?
+🧀 yellow holes fastfood?
+🍔 fastfood brown? round?
+🍟 fastfood yellow? red?
+🍕 fastfood yellow? red? hot?
+🌭 fastfood hotx? red? brown? hot?
+🌮 fastfood yellow? brown?
+🌯 fastfood brown? white?
+🍗 fastfood? brown
+🍲 hotx hot red? orange? brown?
+
+# ---------- Birds ----------
+🦅 bird wings egg nfl brown bill?
+🦆 bird wings egg water? bill green? brown? farm?
+🦉 bird wings egg night brown bill?
+🐧 bird wings? egg cold? black white? water? bill?
+🐓 bird wings egg farm red? white? orange? bill? loud?
+🐔 bird wings egg farm white? bill?
+🦜 bird wings egg green? red? blue? yellow? bill? loud? pet?
+🦢 bird wings egg white water? bill
+🦩 bird wings egg pink bill?
+🕊️ bird wings egg white bill?
+🦚 bird wings egg blue? green? bill?
+🦃 bird wings egg farm brown bill?
+🐦 bird wings egg blue? red? bill? pet?
+🐤 bird wings egg yellow bill?
+🐣 bird? egg yellow white? bill?
+
+# ---------- Sea and water ----------
+🐟 sea water scales egg? zodiac blue? fishx? pet?
+🐠 sea water scales egg? yellow? blue? orange? fishx? pet?
+🐡 sea water sharp? yellow? brown? round? egg? fishx?
+🦈 sea water grey? fast? blue? beach? egg? fishx? scales?
+🐬 sea water blue? grey? nfl fast?
+🐳 sea water blue
+🐙 sea water purple? pink? red? egg?
+🦑 sea water pink? red? orange? egg?
+🦀 sea water shell red orange? zodiac beach egg?
+🦞 sea water shell red egg?
+🦐 sea water shell? pink? orange? red? egg?
+🦪 sea water shell white? brown? beach?
+🐚 sea? water? shell beach seax white? pink? brown? fishx?
+🦭 sea water grey? bark? beach?
+🐢 sea? water? shell slow green egg seax
+🦦 water brown sea?
+🐊 water green scales egg sharp?
+🐸 water green egg? pet?
+🌊 water? beach blue weather? loud?
+
+# ---------- Creepy crawlies ----------
+🐝 bug wings yellow egg? loud?
+🦋 bug wings blue? orange? egg? flyx?
+🐞 bug wings? red round? shell? egg?
+🐜 bug black? red? manx egg?
+🕷️ bug black halloween manx night? egg?
+🕸️ halloween white? black?
+🦟 bug wings egg?
+🦗 bug wings? green brown? night? loud? egg?
+🐛 bug green slow egg?
+🐌 bug? shell slow green? brown?
+🦂 bug? zodiac sharp? brown? black? egg?
+🪲 bug wings? black? shell? egg?
+
+# ---------- Farm, pets and other animals ----------
+🐄 farm white? black? horns?
+🐖 farm pink
+🐑 farm white
+🐐 farm white? horns zodiac
+🐎 farm? fast flyx brown nfl? chess?
+🐴 farm? brown chess seax
+🐂 farm? horns zodiac nba brown
+🐃 horns? farm? black? brown?
+🐏 farm? horns zodiac nfl white? brown?
+🦙 farm? white? brown? pet?
+🐇 farm? pet? white? brown? fast?
+🐕 pet brown? bark hotx
+🐩 pet bark white? pink?
+🐶 pet bark? fishx? brown? hotx?
+🐈 pet black? brown? orange? fishx?
+🐱 pet fishx yellow? orange? brown?
+🐹 pet brown? orange? round?
+🐭 pet? grey? white? brown? pink?
+🦁 yellow? brown? orange? zodiac nfl fishx seax
+🐯 orange black? nfl?
+🐅 orange black? fast? nfl?
+🐆 yellow? orange? brown? fast nfl?
+🦓 white black
+🐘 trunk grey loud?
+🦏 horns grey
+🦒 yellow? orange? brown?
+🐻 brown nfl nba?
+🐼 white black round?
+🦔 needles sharp brown night? pet?
+🐍 green scales egg sharp?
+🦎 green scales egg pet?
+🐉 green wings scales flyx fruitx egg? red?
+🦖 green nba egg scales? sharp?
+🦕 green egg scales? slow?
+🦌 brown horns? nba christmas
+🦇 black brown? wings night halloween manx
+🐒 brown
+🦍 black
+🦥 slow brown
+🦄 white pink? purple? horns
+🦨 black white
+🦝 night brown? black? white?
+🐿️ brown tree?
+🦊 orange night? bark?
+
+# ---------- Getting around ----------
+🚗 car wheels red trunk horns? fast?
+🚕 car wheels yellow trunk? horns?
+🚙 car wheels blue trunk? horns?
+🚌 car wheels yellow? orange? horns? loud?
+🚓 car wheels loud white? black? blue? lightup?
+🚑 car wheels white loud red? lightup?
+🚒 car wheels red loud lightup?
+🚚 car wheels white? horns? loud?
+🚜 car? wheels slow green? red? orange? loud?
+🏎️ car wheels fast red? loud?
+🏍️ car? wheels fast? loud? red? black?
+🚲 wheels car? green? blue? red?
+🛴 wheels blue? red?
+🛹 wheels gear red? brown? fast?
+🚂 wheels loud? car? black? red?
+🚄 wheels fast white? blue?
+🛒 wheels
+✈️ wings wheels? fast nfl loud? white? blue?
+🚁 loud? fast? red? blue?
+🚀 fast space nba white? red? loud?
+🛸 space fast? lightup?
+⛵ boat bow? white? beach? water?
+🚢 boat bow ring? black? white? red?
+🛶 boat bow? brown? water?
+🚤 boat fast bow? white? beach?
+⛴️ boat bow? white?
+🛳️ boat bow? white?
+
+# ---------- Sport ----------
+⚽ sportball white? black? round ballx?
+🏀 sportball orange round ballx?
+🏈 sportball brown ballx?
+⚾ sportball white round ballx?
+🎾 strings? sportball yellow? green? round ballx?
+🏐 sportball white round ballx?
+🏉 sportball brown? white? ballx?
+🎱 sportball? black round ballx?
+🥎 sportball yellow round ballx?
+🥊 gear red
+🏓 gear red? white?
+🏸 gear white?
+🥅 gear holes? white?
+⛸️ gear cold? white? shoe? sharp?
+🎿 gear cold? red? blue?
+🏒 gear brown? black?
+🏏 gear brown?
+⛳ gear? holes red? white? green?
+🥍 gear
+🛷 gear cold red? brown?
+🥌 gear cold? round? grey
+🏹 gear? bow zodiac sharp brown?
+🎯 gear? red round
+
+# ---------- Music ----------
+🎸 instrument strings red? brown? loud?
+🎻 instrument strings bow brown
+🎹 instrument keys scales black? white?
+🎺 instrument loud yellow horns? nba?
+🎷 instrument keys yellow? nba?
+🥁 instrument loud red? round?
+🪕 instrument strings brown?
+🪗 instrument keys red? loud?
+📯 instrument? horns loud yellow?
+
+# ---------- Sky and weather ----------
+☀️ weather hot yellow nba round? space? beach?
+🌧️ weather blue? grey? white?
+⛈️ weather loud? grey? lightup?
+🌩️ weather loud? lightup?
+❄️ weather cold white blue? ballx manx christmas?
+🌈 weather
+☁️ weather white
+🌪️ weather fast? grey? loud?
+⚡ weather? yellow fast nba lightup? hot?
+🌫️ weather grey white?
+☔ weather? purple? blue?
+⛄ cold christmas white manx? weather?
+🌙 space night yellow
+⭐ space night yellow fishx fruitx christmas? lightup?
+🌟 space? night? yellow lightup?
+🌍 space round blue? green?
+🪐 space ring orange? yellow? round?
+☄️ space fast hot? orange?
+🌠 space night fast? lightup?
+🔭 space? night?
+👽 space green? night?
+
+# ---------- Plants ----------
+🌹 flower red sharp?
+🌻 flower yellow
+🌷 flower pink? red?
+🌸 flower pink tree?
+🌼 flower yellow? white?
+🌺 flower red? pink?
+💐 flower party?
+🥀 flower red? brown?
+🌳 green trunk bark crown?
+🌲 green needles bark trunk? christmas?
+🌴 beach green trunk? bark? tree?
+🌵 green needles sharp hot?
+🎄 christmas green needles lightup? trunk? bark?
+🍀 green
+🌿 green seax?
+
+# ---------- Tools and kitchen ----------
+🔨 tool brown? grey?
+🪚 tool sharp
+🔧 tool grey? blue?
+🪛 tool red? yellow?
+✂️ tool? sharp red?
+🪓 tool sharp brown?
+⛏️ tool sharp? grey?
+🔪 kitchen sharp tool?
+🍴 kitchen sharp?
+🥄 kitchen
+🥢 kitchen brown?
+🫖 kitchen hot? white? blue?
+🧂 kitchen white
+🗡️ sharp fishx
+🧲 red tool?
+🧹 halloween? tool? brown? yellow?
+🧽 holes yellow kitchen?
+
+# ---------- Clothes ----------
+👕 clothes blue? green?
+👖 clothes blue
+👗 clothes blue? green?
+🧥 clothes brown?
+🧣 clothes cold? red?
+🧤 clothes cold? green?
+🧦 clothes christmas? red? white?
+👔 clothes blue? green?
+👙 clothes beach blue? pink?
+🩳 clothes beach? trunk? blue?
+👘 clothes blue? pink?
+🎩 hat black
+🧢 hat bill blue?
+👒 hat beach? yellow? brown?
+⛑️ hat red white?
+🎓 hat black
+👑 hat? crown yellow
+🪖 hat green brown?
+👟 shoe fast? white? blue? red?
+👠 shoe red sharp?
+👢 shoe brown
+🩴 shoe beach blue? green?
+👞 shoe brown
+🥾 shoe brown
+🩰 shoe pink
+
+# ---------- Buildings ----------
+🏠 building flyx brown? red? orange?
+🏰 building chess grey? white?
+🏥 building white
+🏫 building brown? orange?
+🏦 building white?
+⛪ building chess? white?
+🏛️ building white?
+🏟️ building loud? round?
+🏭 building grey?
+🗼 building red? orange?
+
+# ---------- Things that light up or ring ----------
+💡 lightup yellow? hot?
+🕯️ lightup hot? christmas? party? white? yellow?
+🔦 lightup black? grey?
+🚦 lightup
+🏮 lightup red
+🔥 lightup? hot red? orange yellow? flyx ballx manx nba
+📺 lightup black?
+📱 lightup ring? keys? black?
+💻 keys lightup? grey? black?
+⌨️ keys grey? white? black?
+☎️ ring red? black? keys?
+⏰ ring loud red? round?
+🛎️ ring yellow? grey?
+🔔 ring christmas yellow loud?
+💍 ring white? yellow? round?
+🎆 lightup? loud night?
+
+# ---------- Parties, holidays and the beach ----------
+🎈 party round? red hotx? strings?
+🎁 party christmas bow red? yellow?
+🎉 party loud yellow?
+🎊 party
+🥳 party yellow loud?
+🎀 bow pink party? red?
+🪅 party pink? orange? yellow?
+🎃 halloween orange round lightup? night?
+👻 halloween white night?
+💀 halloween white
+🧛 halloween night sharp?
+🧙 halloween purple? night?
+🎅 christmas red white?
+🏖️ beach hot? yellow? blue?
+⛱️ beach
+🩱 beach clothes blue? red?
+🏄 beach water? fast? blue?
+🕶️ beach? black
+🪁 beach? strings red? blue?
+
+# ---------- Wordplay, odds and ends ----------
+♟️ chess black
+🤴 chess crown
+👸 chess crown
+🦷 crown white
+⚖️ scales zodiac grey?
+🧾 bill white
+💵 bill green
+🧳 trunk brown?
+🧈 flyx yellow
+🤡 fishx red? white?
+🦶 ballx
+🧺 ballx brown?
+👁️ ballx white?
+✋ ballx
+📬 manx blue? red?
+🛁 hotx white
+🃏 fruitx
+🤠 nfl hat? yellow?
+🏴‍☠️ nfl black
+🪄 nba? black? white?
+💉 needles sharp
+🧵 needles? strings? red?
+🧶 needles? ballx? red? pink?
+😈 horns purple
+🕳️ holes black
+🔮 ballx? purple round
+💜 purple
+🪀 strings round? red? blue?
+🐺 grey night bark?
+🐨 grey tree? slow?

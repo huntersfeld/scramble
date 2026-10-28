@@ -1,0 +1,12 @@
+{
+  "name": "scramble",
+  "private": true,
+  "description": "Scramble, a daily set of thirty-second drills. The game itself is index.html; this file only exists for the emoji data build.",
+  "type": "module",
+  "scripts": {
+    "build:emoji": "node tools/build-emoji-data.mjs"
+  },
+  "devDependencies": {
+    "emojibase-data": "18.0.0"
+  }
+}
