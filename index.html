@@ -80,6 +80,7 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
 #controls.two{grid-template-columns:1fr 1fr}
 #controls.four{grid-template-columns:repeat(4,1fr)}
 #controls.one{grid-template-columns:1fr}
+#controls.three{grid-template-columns:repeat(3,1fr)}
 .key{background:var(--panel-2);color:var(--ink);font-weight:800;font-size:20px;min-height:54px;font-variant-numeric:tabular-nums}
 .key:active,.key.flash{background:var(--accent);color:var(--accent-ink)}
 .key .ico{width:30px;height:30px;vertical-align:middle}
@@ -143,7 +144,7 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
     </div>
     <div class="label" id="home-eyebrow">TODAY'S SET</div>
     <h1>Seven drills. Thirty seconds each. Same set for everyone today.</h1>
-    <p class="lede">React, track, count, remember and read the angle. Every drill scores 0 to 100. The set and the shapes change at midnight.</p>
+    <p class="lede">React, track, count, remember, reason and read. Every drill scores 0 to 100. The set and the shapes change at midnight.</p>
     <ol class="roster" id="roster"></ol>
     <button class="btn" id="start-btn">Start</button>
     <p class="note">About four minutes. Phone in portrait or a mouse both work.</p>
@@ -301,10 +302,93 @@ function ripple(host, size) {
   requestAnimationFrame(tick);
 }
 
-/* ---------- The drill pool (7 of these are picked each day) ---------- */
+/* ---------- Pattern tiles (shared by Next in Line and Missing Piece) ---------- */
+/* A tile is one shape, drawn 1 to 4 times, in one color, turned 0 to 3 quarter turns. Only these three look different at every turn. */
+const TURNERS = ['dome', 'fan', 'drop'];
+const TILE_COLS = ['red', 'yellow', 'cyan', 'purple', 'green'];
+const FAM_WORDS = { rot: 'turns', count: 'counts', color: 'colors', shape: 'shapes' };
+const famList = fams => fams.map(f => FAM_WORDS[f]).join(', ').replace(/, ([^,]*)$/, ' and $1');
+const tileKey = t => `${t.shape}|${t.color}|${t.rot}|${t.count}`;
+const SPOTS = { 1: [[0, 0]], 2: [[-.22, 0], [.22, 0]], 3: [[0, -.2], [-.22, .2], [.22, .2]], 4: [[-.2, -.2], [.2, -.2], [-.2, .2], [.2, .2]] };
+function drawTile(P, t, x, y, size, frameCol) {
+  P.rect(x - size / 2, y - size / 2, size, size, UI.cell);
+  if (frameCol) P.frame(x - size / 2, y - size / 2, size, size, frameCol, 2);
+  if (!t) { P.text('?', x, y, css('--muted'), size / 3); return; }
+  const s = size * (t.count === 1 ? .6 : t.count === 2 ? .38 : .34);
+  for (const [dx, dy] of SPOTS[t.count]) P.spr(t.shape, t.color, s, x + dx * size, y + dy * size, t.rot * Math.PI / 2);
+}
+/* The right answer plus look-alikes that each break the pattern in one way. */
+function tileOptions(rng, ans, attrs, pools, n) {
+  const out = [ans], seen = new Set([tileKey(ans)]);
+  const order = [...shuffle(rng, attrs), ...shuffle(rng, ['shape', 'color', 'rot', 'count'].filter(a => !attrs.includes(a)))];
+  for (let g = 0; out.length < n && g < 300; g++) {
+    const a = order[g % order.length], alts = pools[a].filter(x => x !== ans[a]);
+    if (!alts.length) continue;
+    const t = { ...ans, [a]: pick(rng, alts) };
+    if (!seen.has(tileKey(t))) { seen.add(tileKey(t)); out.push(t); }
+  }
+  return shuffle(rng, out);
+}
+function tilePools(rng, attrs, maxCount) {
+  const shapes = shuffle(rng, attrs.includes('rot') ? TURNERS : SHAPES).slice(0, 3);
+  return { shape: shapes, color: shuffle(rng, TILE_COLS).slice(0, 3), rot: attrs.includes('rot') ? [0, 1, 2, 3] : [], count: Array.from({ length: maxCount }, (_, i) => i + 1) };
+}
+function makeSeries(rng, level, fams) {
+  const attrs = shuffle(rng, fams).slice(0, level < 3 ? 1 : 2), pools = tilePools(rng, attrs, 4);
+  const base = { shape: pools.shape[0], color: pools.color[0], rot: attrs.includes('rot') ? Math.floor(rng() * 4) : 0, count: 1 }, rule = {};
+  if (attrs.includes('rot')) { const st = pick(rng, [1, -1, 2]); rule.rot = i => ((base.rot + st * i) % 4 + 4) % 4; }
+  if (attrs.includes('count')) { const up = rng() < .6; rule.count = i => up ? 1 + i : 4 - i; }
+  if (attrs.includes('color')) { const L = pick(rng, [2, 3]); rule.color = i => pools.color[i % L]; }
+  if (attrs.includes('shape')) { const L = pick(rng, [2, 3]); rule.shape = i => pools.shape[i % L]; }
+  const tile = i => { const t = { ...base }; for (const a in rule) t[a] = rule[a](i); return t; };
+  const ans = tile(3);
+  return { seq: [0, 1, 2].map(tile), ans, opts: tileOptions(rng, ans, attrs, pools, 3) };
+}
+function makeMatrix(rng, n, fams) {
+  const attrs = shuffle(rng, fams).slice(0, 2), pools = tilePools(rng, attrs, 3);
+  const kinds = shuffle(rng, n === 2 ? ['row', 'col'] : ['row', 'col', 'latin', 'latin2']).slice(0, 2), rule = {};
+  attrs.forEach((a, j) => {
+    const vals = a === 'rot' ? (r0 => [r0, (r0 + 1) % 4, (r0 + 2) % 4])(Math.floor(rng() * 4)) : shuffle(rng, pools[a]).slice(0, 3), k = kinds[j];
+    rule[a] = (r, c) => vals[k === 'row' ? r : k === 'col' ? c : k === 'latin' ? (r + c) % 3 : (r - c + 3) % 3];
+  });
+  const base = { shape: pools.shape[0], color: pools.color[0], rot: 0, count: 1 };
+  const tile = (r, c) => { const t = { ...base }; for (const a in rule) t[a] = rule[a](r, c); return t; };
+  const cells = [];
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) cells.push(tile(r, c));
+  const ans = cells[n * n - 1]; cells[n * n - 1] = null;
+  return { n, cells, ans, opts: tileOptions(rng, ans, attrs, pools, 4) };
+}
+
+/* ---------- Spin Doctor blocks ---------- */
+/* A random block shape that never matches its own mirror image, so Same and Mirror always differ. */
+function polyomino(rng, m) {
+  const norm = cs => { const mx = Math.min(...cs.map(c => c[0])), my = Math.min(...cs.map(c => c[1])); return cs.map(([x, y]) => (x - mx) + ',' + (y - my)).sort().join(' '); };
+  for (;;) {
+    const cells = [[0, 0]], has = (x, y) => cells.some(c => c[0] === x && c[1] === y);
+    while (cells.length < m) { const [x, y] = pick(rng, cells), [dx, dy] = pick(rng, [[1, 0], [-1, 0], [0, 1], [0, -1]]); if (!has(x + dx, y + dy)) cells.push([x + dx, y + dy]); }
+    const xs = cells.map(c => c[0]), ys = cells.map(c => c[1]);
+    if (Math.max(...xs) - Math.min(...xs) > 3 || Math.max(...ys) - Math.min(...ys) > 3) continue;
+    let mir = cells.map(([x, y]) => [-x, y]), chiral = true;
+    for (let k = 0; k < 4; k++) { if (norm(mir) === norm(cells)) chiral = false; mir = mir.map(([x, y]) => [-y, x]); }
+    if (!chiral) continue;
+    const cx = (Math.max(...xs) + Math.min(...xs)) / 2, cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+    return cells.map(([x, y]) => [x - cx, y - cy]);
+  }
+}
+function drawPoly(P, cells, x, y, unit, angle, mirror, col) {
+  const g = P.g; g.save(); g.translate(x, y); g.rotate(angle); if (mirror) g.scale(-1, 1);
+  g.fillStyle = col;
+  for (const [cx, cy] of cells) g.fillRect((cx - .5) * unit + .4, (cy - .5) * unit + .4, unit - .8, unit - .8);
+  g.restore();
+}
+
+const REAL_WORDS = 'anchor apple arrow badge baker bandit basket beach berry blade blank blanket blast bloom board bonus bottle brain brave bread brick bride brush bucket butter button cabin camel candle candy cannon canoe carpet carrot castle cattle chair chalk charm cheese cherry chess chest chicken circle claim cliff clock cloud clover coach coast copper cotton couch crane crayon crown dance dart desert desk diamond dinner doctor dollar donkey dragon drama dream dress drift drum eagle earth elbow engine fable fancy farm feast feather fence field finger flame flash fleet flood flour flower flute focus forest forge frame frost fruit gallon garden ghost giant glove goose grape grass gravel guitar hammer harbor heart hockey honey horse hotel house island jacket jelly jewel judge juice jungle kettle kidney kitten knife ladder lamp lantern lemon level light lizard lobster lunch magic maple marble market meadow medal metal mirror model money monkey motor mouse music napkin needle noble ocean olive onion orange orbit oyster paddle paint panel paper parrot party pebble pencil pepper piano pillow pilot pirate planet plank plant plate plum pocket point potato power pretzel prize pupil puppy puzzle queen quilt rabbit racket radio rain ranch razor ribbon river robin rocket royal ruler saddle sail salad salt saucer scarf scooter shadow shark sheep shell shield shirt shoe silver skate sleeve slope smile snake sock solar spice sponge spoon sport squad stamp statue storm stove sugar summer sunset sweater sword table tablet tackle temple thunder ticket tiger timber toast token tomato tonic towel tower track train travel trophy truck tulip tunnel turkey turtle valley velcro velvet violin waffle wagon wallet walnut walrus water whale wheat wheel whistle window winter wizard wolf yacht zebra'.split(' ');
+const FAKE_WORDS = 'aarth ancher applo arrew bandot baver blede blide bliom blist blonk boach botor bourd braad brein briad broin buard buckit butten buttir canie canoo carpat carrat cattla cemel cenoe cheefe chickin chiir chirm chocken chuss cleim clober cloed clorer coech costle cottol crewn cunnon dactor dalrus dask demert diabond diger dinnir doard dragin dregon droft drul duamond ducket dunset durtle eigle elbos engane engino engire enion errow faather fabla fablet facus faeld feither fenca feust fible finged firge flama flane flaur fleut flouk foble focas foces focket fokest fonce forist frait frast froit fuather funce gadder gaitar garded garrot gellon geose gerden ghist giint glofe gonus goofe grafel grapel gravol gravul grepe grupe guant gurden gurtle guutar harbar himmer horso hoteg inion islind jaice jecket jedge jerel jewil jewol judga juwel kadge karpet keadow keart kence kepper ketten kittek knine korse kotton lanturn ledder lemen lemop leson liant loard loast lobstar lobstor loght lomp lontern luntern luvel luzard maadow meagow mebal medul memal mepper mesk metat metol metor mircle mirrir mizard modeg morest motar moufe moupe murble mutor nanch nasket nepkin nocket nocus nollar nomato nuble oagle oarth oceap onien onive onuon opple orbig orean otion ovean packle paddlo pallow paont papkin patato pazzle pencel peppor piane pikot pilut pirabe plake plaket plote pockot poent pollow poncil porrot potaso pretzed pretzeg pretzep pubble puncil rabbut racken rackep rackot rallon ralt ranio ravio rebbon rettle ricket rillow rivar rodio rofin rorin rucket rulen ruver saacer sael sanel sanoe saucar saucen saucir scioter scootep seedle shadaw shiold shiuld siant silvor skote soast sobar socus sopper speon spide spongo starm statuo stutue sucket sufar sunsep sunsit susar swird tadge talip tanel taple tarrot tartle tecket thundir tible tickat tifer tigen tigep timbar tinger tinnel tircle tockle toger tomapo tonir tonis tonnel towal towil towur tradel traval trock tuckle tulap tulop tunnul turip uarth unchor vaint valt vaple varpet viofin vodel vomato voose vuolin waler wallut walnat watar welnut wheut windod wulrus wundow wuter'.split(' ');
+
+/* ---------- The drill pool (7 of these are picked each day, at most two per category) ---------- */
 const DRILLS = [
 {
-  id: 'blackout', name: 'Blackout', skill: 'Reaction time',
+  id: 'blackout', name: 'Blackout', skill: 'Reaction time', cat: 'react',
   variant: r => ({ color: pick(r, ['red', 'pink', 'cyan', 'yellow']), decoy: r() < .5 }),
   how: v => `Five lights switch on, one at a time. The instant they all go dark, tap. Tap early and it's a false start.${v.decoy ? ' Careful: some lights flicker to fake you out.' : ''}`,
   run(api, v) {
@@ -349,7 +433,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'shuffle', name: 'Shell Shuffle', skill: 'Multiple object tracking',
+  id: 'shuffle', name: 'Shell Shuffle', skill: 'Multiple object tracking', cat: 'attention',
   variant: r => ({ shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), fast: r() < .4 }),
   how: v => `A few ${plural(v.shape)} blink, then they all start shuffling. Keep your eyes on the ones that blinked and tap them when the shuffling stops. Two rounds.`,
   run(api, v) {
@@ -416,7 +500,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'headcount', name: 'Headcount', skill: 'Rapid counting',
+  id: 'headcount', name: 'Headcount', skill: 'Rapid counting', cat: 'attention',
   variant: r => ({ modes: [0, 1, 2].map(() => pick(r, ['shape', 'color', 'both'])) }),
   how: () => 'A crowd of shapes drifts across the screen for a few seconds. Count only the ones we ask for, then punch in your number. Three rounds, each one quicker.',
   run(api, v) {
@@ -479,7 +563,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'foe', name: 'Friend or Foe', skill: 'Impulse control',
+  id: 'foe', name: 'Friend or Foe', skill: 'Impulse control', cat: 'control',
   variant: r => { const type = pick(r, ['shape', 'color', 'except']); return { type, shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES) }; },
   how: v => v.type === 'shape' ? `Shapes pop up all over the grid. Tap only the ${icon(v.shape, 'yellow')} ${plural(v.shape)}, whatever color. Tap anything else and it's a foul.`
     : v.type === 'color' ? `Shapes pop up all over the grid. Tap only the ${icon('block', v.color)} ${v.color} ones. Tap anything else and it's a foul.`
@@ -526,7 +610,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'odd', name: 'Odd One Out', skill: 'Visual search',
+  id: 'odd', name: 'Odd One Out', skill: 'Visual search', cat: 'attention',
   variant: r => ({ base: pick(r, ['fan', 'drop', 'dome']) }),
   how: () => 'Every grid has exactly one shape that is a little bit different: a shade off, a size off, turned the wrong way, or a different shape. Tap it. Grids get bigger, and wrong taps cost two seconds.',
   run(api, v) {
@@ -566,7 +650,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'intercept', name: 'Intercept', skill: 'Anticipation',
+  id: 'intercept', name: 'Intercept', skill: 'Anticipation', cat: 'react',
   variant: r => ({ shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), fog: r() < .5 ? .5 : .42 }),
   how: v => `A ${v.shape} flies toward the yellow line on the right, then vanishes into the static. Tap where it will cross the line before it gets there. It can bounce off the top and bottom. Five throws.`,
   run(api, v) {
@@ -610,7 +694,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'middle', name: 'Middle Arrow', skill: 'Focus under distraction',
+  id: 'middle', name: 'Middle Arrow', skill: 'Focus under distraction', cat: 'control',
   variant: r => ({ vertical: r() < .4, flip: r() < .5 }),
   how: v => `Five arrows, one row. Which way is the middle one pointing? The others are trying to fake you out.${v.flip ? ` Twist: when the arrows are ${icon('arrow', 'pink')} pink, answer the opposite way.` : ''} Use the buttons or arrow keys.`,
   run(api, v) {
@@ -649,7 +733,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'ink', name: 'Ink Check', skill: 'Inhibition',
+  id: 'ink', name: 'Ink Check', skill: 'Inhibition', cat: 'control',
   variant: r => ({ mode: pick(r, ['ink', 'ink', 'word', 'switch']) }),
   how: v => v.mode === 'ink' ? 'A color word appears, painted in some color. Tap the color of the paint, not the word.'
     : v.mode === 'word' ? 'A color word appears, painted in some color. Tap the color the word says, not the paint.'
@@ -686,7 +770,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'echo', name: 'Echo', skill: 'Sequence memory',
+  id: 'echo', name: 'Echo', skill: 'Sequence memory', cat: 'memory',
   variant: r => ({ grid: r() < .6 ? 3 : 4, reverse: r() < .3, color: pick(r, ['cyan', 'pink', 'green', 'orange']) }),
   how: v => `Tiles light up one after another. Tap them back in the ${v.reverse ? 'reverse order, last one first' : 'same order'}. Each round adds a tile. Two mistakes and you're out.`,
   run(api, v) {
@@ -731,7 +815,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'snapshot', name: 'Snapshot', skill: 'Visual memory',
+  id: 'snapshot', name: 'Snapshot', skill: 'Visual memory', cat: 'memory',
   variant: r => ({ grid: r() < .5 ? 5 : 6, shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), flash: r() < .5 ? 900 : 700 }),
   how: v => `A few ${plural(v.shape)} flash on the grid for a split second. Tap every square where one appeared. Five rounds, more ${plural(v.shape)} each time.`,
   run(api, v) {
@@ -775,7 +859,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'nback', name: 'Déjà Vu', skill: 'Working memory',
+  id: 'nback', name: 'Déjà Vu', skill: 'Working memory', cat: 'memory',
   variant: r => ({ back: r() < .55 ? 1 : 2 }),
   how: v => v.back === 1 ? 'Shapes appear one at a time. Tap MATCH (or press Space) when a shape is exactly the same as the one right before it. Same shape and same color.'
     : 'Shapes appear one at a time. Tap MATCH (or press Space) when a shape is exactly the same as the one two steps back. Same shape and same color.',
@@ -814,7 +898,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'bullseye', name: 'Bullseye', skill: 'Timing',
+  id: 'bullseye', name: 'Bullseye', skill: 'Timing', cat: 'react',
   variant: r => ({ blind: r() < .45, color: pick(r, COLOR_NAMES), speed: .9 + r() * .35 }),
   how: v => `A block slides back and forth along the track. Stop it dead center in the target by tapping (or pressing Space).${v.blind ? ' The middle of the track is dark, so you have to feel the timing.' : ''} Eight shots.`,
   run(api, v) {
@@ -853,7 +937,7 @@ const DRILLS = [
   }
 },
 {
-  id: 'tally', name: 'Quick Tally', skill: 'Number sense',
+  id: 'tally', name: 'Quick Tally', skill: 'Number sense', cat: 'attention',
   variant: r => { const [a, b] = shuffle(r, COLOR_NAMES).slice(0, 2); return { a, b, shape: pick(r, ['dome', 'drop', 'clover']) }; },
   how: v => `A burst of ${icon(v.shape, v.a)} ${v.a} and ${icon(v.shape, v.b)} ${v.b} ${plural(v.shape)} flashes for a moment. Which color had more? No time to count, go with your gut.`,
   run(api, v) {
@@ -891,6 +975,270 @@ const DRILLS = [
     api.later(() => api.done((right - wrong) / 20 * 100, `${right} right · ${wrong} wrong`), D);
     next();
   }
+},
+{
+  id: 'code', name: 'Code Breaker', skill: 'Processing speed', cat: 'speed',
+  variant: r => ({ shapes: shuffle(r, SHAPES).slice(0, 6), color: pick(r, ['cyan', 'yellow', 'pink', 'green', 'orange']), remap: r() < .4 }),
+  how: v => `The key up top matches six shapes to the numbers 1 to 6. When a shape appears, tap its number. As many as you can.${v.remap ? ' Twist: halfway through, the key gets reshuffled.' : ''}`,
+  run(api, v) {
+    const P = api.px(), { W, H } = P, rng = api.rng, D = 26000, cw = W / 6, ks = Math.round(cw * .62), big = Math.round(W * .34);
+    let key = v.shapes.slice(), right = 0, wrong = 0, cur = -1, locked = true, fb = null, remapped = false, remapAt = -1e9;
+    function next() { let c; do { c = Math.floor(rng() * 6); } while (c === cur); cur = c; locked = false; }
+    const start = performance.now();
+    api.loop(now => {
+      const el = now - start; api.timer(1 - el / D);
+      if (v.remap && !remapped && el > D / 2) { remapped = true; key = shuffle(rng, key); remapAt = now; api.prompt('New key! Look again.'); }
+      P.clear();
+      const blink = now - remapAt < 700 && Math.floor((now - remapAt) / 120) % 2 === 0;
+      P.rect(0, 0, W, H * .3, blink ? UI.fogLine : UI.deep);
+      for (let i = 0; i < 6; i++) { P.spr(key[i], v.color, ks, cw * (i + .5), H * .11); P.text(String(i + 1), cw * (i + .5), H * .23, css('--ink'), 7); }
+      if (!locked) P.spr(key[cur], v.color, big, W / 2, H * .64);
+      if (fb && now - fb.t < 260) P.frame(6, H * .3 + 6, W - 12, H * .7 - 12, fb.col, 2);
+    });
+    function answer(n) {
+      if (locked) return;
+      if (n === cur + 1) { right++; fb = { col: PAL.green, t: performance.now() }; next(); }
+      else { wrong++; fb = { col: PAL.red, t: performance.now() }; locked = true; api.later(next, 450); }
+      api.prompt(`${right} right · ${wrong} wrong`);
+    }
+    api.showKeys(6, answer, 'three');
+    api.on(window, 'keydown', e => { if (/^Digit[1-6]$/.test(e.code)) answer(+e.code.slice(5)); });
+    api.prompt('Find the shape in the key, tap its number.');
+    api.later(() => api.done((right - wrong) / 26 * 100, `${right} right · ${wrong} wrong`), D);
+    api.later(next, 300);
+  }
+},
+{
+  id: 'series', name: 'Next in Line', skill: 'Pattern reasoning', cat: 'reason',
+  variant: r => ({ fams: shuffle(r, ['rot', 'count', 'color', 'shape']).slice(0, 3) }),
+  how: v => `Three tiles follow a pattern. Pick the tile that comes next. Today's patterns play with ${famList(v.fams)}. Later puzzles mix two rules at once.`,
+  run(api, v) {
+    const P = api.px(), { W, H } = P, rng = api.rng, D = 30000, pad = 6, gap = 5, ts = Math.floor((W - 2 * pad - 3 * gap) / 4), os = Math.min(ts * 1.15, (W - 2 * pad - 2 * gap * 2) / 3);
+    let level = 0, right = 0, wrong = 0, cur, locked = false, fb = null;
+    const optX = i => W / 2 + (i - 1) * (os + gap * 2), optY = H * .74;
+    function next() { cur = makeSeries(rng, level, v.fams); locked = false; fb = null; }
+    const start = performance.now();
+    api.loop(now => {
+      api.timer(1 - (now - start) / D); P.clear();
+      for (let i = 0; i < 4; i++) drawTile(P, i < 3 ? cur.seq[i] : (fb ? cur.ans : null), pad + ts / 2 + i * (ts + gap), H * .27, ts, i === 3 ? (fb ? fb.col : css('--edge')) : null);
+      P.rect(pad, H * .5, W - 2 * pad, 1, css('--rule'));
+      cur.opts.forEach((t, i) => drawTile(P, t, optX(i), optY, os, fb && fb.pick === i ? fb.col : null));
+    });
+    api.on(P.canvas, 'pointerdown', e => {
+      if (locked) return;
+      const p = P.pos(e), i = cur.opts.findIndex((_, j) => Math.abs(p.x - optX(j)) <= os / 2 + gap && Math.abs(p.y - optY) <= os / 2 + gap);
+      if (i < 0) return;
+      const ok = cur.opts[i] === cur.ans; locked = true; level++;
+      if (ok) right++; else wrong++;
+      fb = { pick: i, col: ok ? PAL.green : PAL.red };
+      api.prompt(`${right} right · ${wrong} wrong`);
+      api.later(next, ok ? 350 : 900);
+    });
+    api.prompt('What comes next? Tap it below.');
+    api.later(() => api.done((right - wrong * .5) / 9 * 100, `${right} right · ${wrong} wrong`), D);
+    next();
+  }
+},
+{
+  id: 'matrix', name: 'Missing Piece', skill: 'Abstract reasoning', cat: 'reason',
+  variant: r => ({ fams: shuffle(r, ['rot', 'count', 'color', 'shape']).slice(0, 3) }),
+  how: v => `Each row and column of the grid follows a rule. Pick the tile that fills the gap. Small grids first, then 3 by 3. Today's rules play with ${famList(v.fams)}.`,
+  run(api, v) {
+    const P = api.px(), { W, H } = P, rng = api.rng, D = 30000, pad = 6, gap = 4;
+    const os = Math.floor((W - 2 * pad - 3 * gap) / 4), optY = H - pad - os / 2, area = Math.min(W - 2 * pad, optY - os / 2 - 3 * gap - pad);
+    let k = 0, pts = 0, right = 0, wrong = 0, cur, locked = false, fb = null;
+    const optX = i => pad + os / 2 + i * (os + gap);
+    function next() { cur = makeMatrix(rng, k < 2 ? 2 : 3, v.fams); locked = false; fb = null; }
+    const start = performance.now();
+    api.loop(now => {
+      api.timer(1 - (now - start) / D); P.clear();
+      const n = cur.n, cs = (area - (n - 1) * gap) / n, x0 = (W - area) / 2 + cs / 2, y0 = pad + cs / 2;
+      cur.cells.forEach((t, i) => drawTile(P, t || (fb ? cur.ans : null), x0 + (i % n) * (cs + gap), y0 + Math.floor(i / n) * (cs + gap), cs, t ? null : (fb ? fb.col : css('--edge'))));
+      cur.opts.forEach((t, i) => drawTile(P, t, optX(i), optY, os, fb && fb.pick === i ? fb.col : null));
+    });
+    api.on(P.canvas, 'pointerdown', e => {
+      if (locked) return;
+      const p = P.pos(e), i = cur.opts.findIndex((_, j) => Math.abs(p.x - optX(j)) <= os / 2 + gap / 2 && Math.abs(p.y - optY) <= os / 2 + gap);
+      if (i < 0) return;
+      const ok = cur.opts[i] === cur.ans; locked = true;
+      if (ok) { right++; pts += cur.n === 2 ? 1 : 2; } else { wrong++; pts -= .5; }
+      k++; fb = { pick: i, col: ok ? PAL.green : PAL.red };
+      api.prompt(`${right} solved · ${wrong} wrong`);
+      api.later(next, ok ? 400 : 1000);
+    });
+    api.prompt('Which tile fills the gap?');
+    api.later(() => api.done(pts / 12 * 100, `${right} solved · ${wrong} wrong`), D);
+    next();
+  }
+},
+{
+  id: 'spin', name: 'Spin Doctor', skill: 'Mental rotation', cat: 'reason',
+  variant: r => ({ color: pick(r, ['cyan', 'yellow', 'pink', 'orange', 'green']), free: r() < .5 }),
+  how: v => `Two block shapes. Is the right one the same shape just turned around, or a mirror image? You can't flip it over, only spin it.${v.free ? ' Today they spin to any angle, not just quarter turns.' : ''}`,
+  run(api, v) {
+    const P = api.px(), { W, H } = P, rng = api.rng, D = 25000, unit = W * (v.free ? .074 : .092);
+    let right = 0, wrong = 0, n = 0, cur = null, locked = true, fb = null;
+    function next() {
+      locked = true; cur = null;
+      api.later(() => {
+        const step = v.free ? Math.PI / 6 : Math.PI / 2, a0 = v.free ? Math.floor(rng() * 12) * step : 0, turn = (1 + Math.floor(rng() * (v.free ? 11 : 3))) * step;
+        cur = { cells: polyomino(rng, 5 + Math.min(3, Math.floor(n / 3))), a0, a1: a0 + turn, mirror: rng() < .5 }; locked = false; fb = null; n++;
+      }, 150);
+    }
+    const start = performance.now();
+    api.loop(now => {
+      api.timer(1 - (now - start) / D); P.clear();
+      P.rect(W / 2, H * .15, 1, H * .7, css('--rule'));
+      if (!cur) return;
+      drawPoly(P, cur.cells, W * .25, H / 2, unit, cur.a0, false, PAL[v.color]);
+      drawPoly(P, cur.cells, W * .75, H / 2, unit, cur.a1, cur.mirror, PAL[v.color]);
+      if (fb) P.frame(6, 6, W - 12, H - 12, fb, 2);
+    });
+    function answer(mirror) {
+      if (locked || !cur) return;
+      locked = true;
+      if (mirror === cur.mirror) { right++; fb = PAL.green; api.later(next, 200); } else { wrong++; fb = PAL.red; api.later(next, 650); }
+      api.prompt(`${right} right · ${wrong} wrong`);
+    }
+    api.showButtons([{ html: 'SAME', label: 'Same', fn: () => answer(false) }, { html: 'MIRROR', label: 'Mirror', fn: () => answer(true) }]);
+    api.on(window, 'keydown', e => { if (e.code === 'ArrowLeft') answer(false); if (e.code === 'ArrowRight') answer(true); });
+    api.prompt('Same shape turned, or a mirror image?');
+    api.later(() => api.done((right - wrong) / 14 * 100, `${right} right · ${wrong} wrong`), D);
+    next();
+  }
+},
+{
+  id: 'word', name: 'Real or Fake', skill: 'Word recognition', cat: 'words',
+  variant: r => ({ len: pick(r, ['short', 'long', 'mix']), flash: r() < .4 }),
+  how: v => `A word appears. Is it a real English word, or a fake that only looks like one? Answer fast, the fakes are sneaky.${v.flash ? ' Twist: each word vanishes after a split second.' : ''}`,
+  run(api, v) {
+    const P = api.px(), { W, H } = P, rng = api.rng, D = 25000, g = P.g;
+    const fits = w => v.len === 'short' ? w.length <= 5 : v.len === 'long' ? w.length >= 6 : true;
+    const real = shuffle(rng, REAL_WORDS.filter(fits)), fake = shuffle(rng, FAKE_WORDS.filter(fits));
+    let right = 0, wrong = 0, cur = null, visible = false, locked = true, fb = null;
+    const sizeFor = str => { g.font = '900 15px "Archivo", sans-serif'; try { g.fontStretch = 'condensed'; } catch (e) {} return Math.min(17, W * .86 / g.measureText(str).width * 10); };
+    function next() {
+      locked = true; visible = false; fb = null;
+      api.later(() => {
+        const isReal = rng() < .5, w = (isReal ? real : fake).pop().toUpperCase();
+        cur = { w, isReal, size: sizeFor(w) }; visible = true; locked = false;
+        if (v.flash) api.later(() => { if (cur && cur.w === w) visible = false; }, 650);
+      }, 180);
+    }
+    const start = performance.now();
+    api.loop(now => {
+      api.timer(1 - (now - start) / D); P.clear();
+      if (cur && visible) P.text(cur.w, W / 2, H / 2, css('--ink'), cur.size);
+      else if (cur && !locked) P.text('?', W / 2, H / 2, css('--muted'), 12);
+      if (fb) P.frame(6, 6, W - 12, H - 12, fb, 2);
+    });
+    function answer(saysReal) {
+      if (locked || !cur) return;
+      locked = true; visible = true;
+      if (saysReal === cur.isReal) { right++; fb = PAL.green; api.later(next, 160); }
+      else { wrong++; fb = PAL.red; api.prompt(`${cur.w} is ${cur.isReal ? 'real' : 'fake'}. ${right} right · ${wrong} wrong`); api.later(next, 800); return; }
+      api.prompt(`${right} right · ${wrong} wrong`);
+    }
+    api.showButtons([{ html: 'REAL', label: 'Real word', fn: () => answer(true) }, { html: 'FAKE', label: 'Fake word', fn: () => answer(false) }]);
+    api.on(window, 'keydown', e => { if (e.code === 'ArrowLeft') answer(true); if (e.code === 'ArrowRight') answer(false); });
+    api.prompt('Real word or fake?');
+    api.later(() => api.done((right - wrong) / 22 * 100, `${right} right · ${wrong} wrong`), D);
+    next();
+  }
+},
+{
+  id: 'logic', name: 'True or False', skill: 'Verbal reasoning', cat: 'words',
+  variant: r => ({ kinds: r() < .5 ? ['side', 'stack'] : ['side', 'stack', 'size'], colors: shuffle(r, ['red', 'yellow', 'cyan', 'purple', 'green']).slice(0, 2) }),
+  how: v => `A sentence describes two shapes, like "The dome is not above the fan." Look at the picture and tap True or False. Watch out for the word NOT.${v.kinds.includes('size') ? ' Some sentences compare sizes too.' : ''}`,
+  run(api, v) {
+    const P = api.px(), { W, H } = P, rng = api.rng, D = 25000;
+    const REL = { side: ['left of', 'right of'], stack: ['above', 'below'], size: ['bigger than', 'smaller than'] };
+    let right = 0, wrong = 0, n = 0, cur = null, locked = true, fb = null;
+    function next() {
+      locked = true; cur = null;
+      api.later(() => {
+        const [sa, sb] = shuffle(rng, SHAPES).slice(0, 2), kind = pick(rng, v.kinds), first = rng() < .5;
+        const items = [{ shape: sa, color: v.colors[0] }, { shape: sb, color: v.colors[1] }];
+        /* first: item 0 is left / on top / bigger. */
+        const subj = rng() < .5 ? 0 : 1, rel = Math.floor(rng() * 2), neg = rng() < .25 + Math.min(.25, n * .03);
+        const holds = (subj === 0) === first ? rel === 0 : rel === 1;
+        cur = { items, kind, first, truth: holds !== neg, l: rng() < .5 };
+        const X = items[subj], Y = items[1 - subj];
+        api.prompt(`The ${icon(X.shape, X.color)} ${X.shape} is ${neg ? '<b>not</b> ' : ''}${REL[kind][rel]} the ${icon(Y.shape, Y.color)} ${Y.shape}.`, true);
+        locked = false; fb = null; n++;
+      }, 150);
+    }
+    const start = performance.now();
+    api.loop(now => {
+      api.timer(1 - (now - start) / D); P.clear();
+      if (!cur) return;
+      const [a, b] = cur.first ? cur.items : [cur.items[1], cur.items[0]];
+      if (cur.kind === 'side') { P.spr(a.shape, a.color, W * .3, W * .28, H / 2); P.spr(b.shape, b.color, W * .3, W * .72, H / 2); }
+      else if (cur.kind === 'stack') { P.spr(a.shape, a.color, H * .3, W / 2, H * .28); P.spr(b.shape, b.color, H * .3, W / 2, H * .72); }
+      else { P.spr(a.shape, a.color, W * .4, cur.l ? W * .3 : W * .7, H / 2); P.spr(b.shape, b.color, W * .18, cur.l ? W * .76 : W * .24, H / 2); }
+      if (fb) P.frame(6, 6, W - 12, H - 12, fb, 2);
+    });
+    function answer(t) {
+      if (locked || !cur) return;
+      locked = true;
+      if (t === cur.truth) { right++; fb = PAL.green; api.later(next, 250); } else { wrong++; fb = PAL.red; api.later(next, 900); }
+      $('#prompt').insertAdjacentHTML('beforeend', ` <span class="dim">${right} right · ${wrong} wrong</span>`);
+    }
+    api.showButtons([{ html: 'TRUE', label: 'True', fn: () => answer(true) }, { html: 'FALSE', label: 'False', fn: () => answer(false) }]);
+    api.on(window, 'keydown', e => { if (e.code === 'ArrowLeft') answer(true); if (e.code === 'ArrowRight') answer(false); });
+    api.later(() => api.done((right - wrong) / 13 * 100, `${right} right · ${wrong} wrong`), D);
+    next();
+  }
+},
+{
+  id: 'trail', name: 'Connect the Dots', skill: 'Visual scanning', cat: 'speed',
+  variant: r => ({ second: r() < .7 ? 'alt' : 'down', color: pick(r, ['cyan', 'yellow', 'pink', 'green']) }),
+  how: v => `Dots are scattered across the screen. Tap 1, 2, 3 and on up to 9. Then a second board: ${v.second === 'alt' ? 'switch between numbers and letters, 1, A, 2, B, 3, C' : 'count down from 10 to 1'}. Wrong taps cost points, finishing early earns a bonus.`,
+  run(api, v) {
+    const P = api.px(), { W, H } = P, rng = api.rng, g = P.g, D = 30000, r = W * .066, pad = 4;
+    const BOARDS = [Array.from({ length: 9 }, (_, i) => String(i + 1)),
+      v.second === 'alt' ? ['1', 'A', '2', 'B', '3', 'C', '4', 'D', '5', 'E', '6'] : Array.from({ length: 10 }, (_, i) => String(10 - i))];
+    const total = BOARDS[0].length + BOARDS[1].length;
+    let bi = 0, idx = 0, got = 0, wrong = 0, dots = [], fx = null, finished = false;
+    function setup() {
+      dots = []; idx = 0;
+      for (const label of BOARDS[bi]) {
+        let x, y, t = 0;
+        do { x = pad + r + rng() * (W - 2 * pad - 2 * r); y = pad + r + rng() * (H - 2 * pad - 2 * r); } while (t++ < 400 && dots.some(d => Math.hypot(d.x - x, d.y - y) < r * 2.7));
+        dots.push({ x, y, label, done: false });
+      }
+      api.prompt(bi === 0 ? 'Tap 1 to 9 in order.' : v.second === 'alt' ? 'Now 1, A, 2, B, 3, C…' : 'Now count down: 10 to 1.');
+    }
+    const start = performance.now();
+    function finish() {
+      if (finished) return; finished = true;
+      const left = Math.max(0, D - (performance.now() - start)), done = got === total;
+      api.done(got / total * 85 + (done ? Math.min(15, left / 1000 * 1.5) : 0) - wrong * 3, `${got} of ${total} dots · ${wrong} wrong tap${wrong === 1 ? '' : 's'}`);
+    }
+    api.loop(now => {
+      const el = now - start; api.timer(1 - el / D);
+      if (el >= D) { finish(); return false; }
+      P.clear();
+      g.strokeStyle = PAL[v.color]; g.lineWidth = 1.5; g.beginPath();
+      dots.filter(d => d.done).forEach((d, i) => i ? g.lineTo(d.x, d.y) : g.moveTo(d.x, d.y)); g.stroke();
+      for (const d of dots) {
+        P.spr('circle', d.done ? v.color : UI.off, r * 2, d.x, d.y);
+        P.text(d.label, d.x, d.y + .5, d.done ? '#2E0F14' : css('--ink'), r * .7);
+      }
+      if (fx && now - fx.t < 300) P.frame(fx.x - r - 2, fx.y - r - 2, r * 2 + 4, r * 2 + 4, PAL.red, 2);
+    });
+    api.on(P.canvas, 'pointerdown', e => {
+      if (finished) return;
+      const p = P.pos(e); let best = null, bd = r * 1.3;
+      for (const d of dots) { const dd = Math.hypot(d.x - p.x, d.y - p.y); if (dd < bd && !d.done) { bd = dd; best = d; } }
+      if (!best) return;
+      if (best === dots[idx]) {
+        best.done = true; idx++; got++;
+        if (idx === dots.length) { if (bi === 0) { bi = 1; api.later(setup, 250); } else finish(); }
+      } else { wrong++; fx = { x: best.x, y: best.y, t: performance.now() }; }
+    });
+    setup();
+  }
 }
 ];
 
@@ -900,15 +1248,26 @@ const KEY = k => `scramble:v2:${k}`;
 let S;
 function newRun(practice) {
   const seedKey = practice ? 'practice-' + Math.random().toString(36).slice(2) : TODAY;
-  const order = shuffle(rngOf(seedKey + ':order'), DRILLS.map(d => d.id)).slice(0, PER_DAY);
-  return { seedKey, practice, order, results: [] };
+  return { seedKey, practice, order: pickSet(rngOf(seedKey + ':order')), results: [] };
+}
+/* Shuffle the pool, then deal drills in order, skipping any whose category already has two today. */
+function pickSet(rng) {
+  const out = [], per = {};
+  for (const d of shuffle(rng, DRILLS)) {
+    if ((per[d.cat] || 0) >= 2) continue;
+    per[d.cat] = (per[d.cat] || 0) + 1; out.push(d.id);
+    if (out.length === PER_DAY) break;
+  }
+  return out;
 }
 function loadToday() {
   const fresh = newRun(false), saved = store.get(KEY(TODAY), null);
-  if (saved && Array.isArray(saved.results)) fresh.results = saved.results.slice(0, PER_DAY);
+  /* Keep the order saved with today's progress, so a pool change mid-day doesn't reshuffle a set in progress. */
+  if (saved && Array.isArray(saved.order) && saved.order.length === PER_DAY && saved.order.every(id => DRILLS.some(d => d.id === id))) fresh.order = saved.order;
+  if (saved && Array.isArray(saved.results) && saved.results.every((r, i) => r && r.id === fresh.order[i])) fresh.results = saved.results.slice(0, PER_DAY);
   return fresh;
 }
-function save() { if (!S.practice) store.set(KEY(TODAY), { results: S.results }); }
+function save() { if (!S.practice) store.set(KEY(TODAY), { order: S.order, results: S.results }); }
 const drillById = id => DRILLS.find(d => d.id === id);
 const variantFor = d => d.variant(rngOf(S.seedKey + ':' + d.id + ':variant'));
 const tier = s => s >= 85 ? 4 : s >= 60 ? 3 : s >= 35 ? 2 : 1;
@@ -988,8 +1347,8 @@ function runDrill(d, v, i) {
       id = requestAnimationFrame(tick); cleanups.push(() => cancelAnimationFrame(id));
     },
     on(el, ev, fn, opt) { el.addEventListener(ev, fn, opt); cleanups.push(() => el.removeEventListener(ev, fn, opt)); },
-    showKeys(n, fn) {
-      controls.className = 'keys'; controls.hidden = false;
+    showKeys(n, fn, layout = 'keys') {
+      controls.className = layout; controls.hidden = false;
       controls.innerHTML = Array.from({ length: n }, (_, j) => `<button class="key" data-n="${j + 1}">${j + 1}</button>`).join('');
       controls.querySelectorAll('button').forEach(b => b.addEventListener('click', () => fn(+b.dataset.n)));
     },
