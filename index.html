@@ -65,13 +65,17 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
 .roster .sc{font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
 
 .prog{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
-.prog i{height:6px;background:var(--rule)}
+.prog i{height:6px;background:var(--rule);transition:background .5s}
 .hud{display:flex;flex-direction:column;gap:10px}
 .hud-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .hud-name{font-size:18px;font-weight:800;font-stretch:90%;line-height:1.2}
 .hud-count{font-size:12px;font-weight:600;letter-spacing:.12em;opacity:.7;white-space:nowrap;font-variant-numeric:tabular-nums}
 .timer{height:6px;background:var(--rule);overflow:hidden}
 .timer i{display:block;height:100%;background:var(--A);transform-origin:left;transform:scaleX(1)}
+.timer.low i{background:var(--C)}
+.hud-meta{display:flex;align-items:baseline;gap:10px}
+.hud-clock{min-width:2ch;text-align:right;font-weight:900;font-stretch:75%;font-size:24px;line-height:1;font-variant-numeric:tabular-nums}
+.hud-clock.low{color:var(--C)}
 .stage{position:relative;width:100%;aspect-ratio:1/1;display:flex;flex-direction:column;background:var(--panel);touch-action:manipulation;user-select:none;-webkit-user-select:none}
 #arena{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 #arena canvas{display:block;touch-action:none}
@@ -87,18 +91,26 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
 .key .ico{width:30px;height:30px;vertical-align:middle}
 .key.swatch{min-height:60px}
 
-/* The drill card sits in the stage's flow, so a long intro can make the stage taller than square. */
-.card{position:relative;z-index:5;flex:1;display:flex;flex-direction:column;gap:14px;padding:0 0 4px;background:var(--bg)}
-.card .dome{display:flex;justify-content:center;align-items:flex-end;border-bottom:2px solid var(--ink);margin-bottom:4px}
-.card .skill{color:var(--A)}
+/* The intro card sits in the stage's flow, so a long intro can make the stage taller than square.
+   Its rings are stacked layers clipped to a dome at the bottom edge; the last one is the page color the text sits on. */
+.card{position:relative;z-index:5;flex:1;display:flex;flex-direction:column}
+.card.leaving{position:absolute;inset:0}
+.card .ring{position:absolute;inset:0;clip-path:circle(0% at 50% 100%)}
+.card .in{position:relative;flex:1;display:flex;flex-direction:column;gap:14px;padding:4px 0 6px;cursor:pointer}
 .card p{font-size:16px;line-height:1.4;opacity:.85;max-width:44ch}
-.card .btn{margin-top:auto}
-.card.result{justify-content:flex-end;gap:12px}
-.card .score{font-weight:900;font-stretch:75%;font-size:clamp(110px,36vw,160px);line-height:.78;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
-.card .score small{font-size:16px;font-weight:700;font-stretch:100%;letter-spacing:0;opacity:.7;margin-left:6px}
-.card .meter{height:6px;background:var(--rule)}
-.card .meter i{display:block;height:100%}
-.card .verdict{font-size:14px;font-weight:800;letter-spacing:.12em}
+.card .cd{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;border-top:2px solid var(--ink);padding-top:10px}
+.card .cd b{font-weight:900;font-stretch:75%;font-size:76px;line-height:.78;letter-spacing:-.04em;font-variant-numeric:tabular-nums;transform-origin:100% 100%}
+.card .cd-bar{height:6px;background:var(--rule)}
+.card .cd-bar i{display:block;height:100%;transform-origin:left}
+/* The score stamp lands over the drill's last frame. */
+.stamp{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;padding:16px;background:rgba(46,15,20,.9);cursor:pointer}
+.stamp .score{font-weight:900;font-stretch:75%;font-size:clamp(110px,36vw,160px);line-height:.78;letter-spacing:-.05em;font-variant-numeric:tabular-nums;transform-origin:0 100%}
+.stamp .score small{font-size:16px;font-weight:700;font-stretch:100%;letter-spacing:0;opacity:.7;margin-left:6px}
+.stamp .meter{height:6px;background:var(--rule)}
+.stamp .meter i{display:block;height:100%;width:0}
+.stamp .verdict{font-size:14px;font-weight:800;letter-spacing:.12em}
+.stamp p{font-size:16px;opacity:.85}
+#controls .btn{min-height:56px}
 
 .res-head{display:flex;justify-content:space-between;gap:12px}
 .total{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
@@ -113,7 +125,7 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
 .bars .nm{font-weight:700}
 .bars .dt{font-size:12px;opacity:.7;text-align:right}
 .bars .bar{height:6px;background:var(--rule)}
-.bars .bar i{display:block;height:100%}
+.bars .bar i{display:block;height:100%;transform-origin:left}
 .bars .sc{font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
 .stickers{display:flex;flex-wrap:wrap;gap:22px 26px;padding:12px 8px 4px}
 .sticker{display:flex;flex-direction:column;align-items:flex-start;gap:12px;width:116px}
@@ -184,7 +196,7 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
     <div class="wrap" style="gap:14px">
       <div class="hud">
         <div class="prog" id="prog"></div>
-        <div class="hud-top"><div class="hud-name" id="hud-name"></div><div class="hud-count" id="hud-count"></div></div>
+        <div class="hud-top"><div class="hud-name" id="hud-name"></div><div class="hud-meta"><span class="hud-count" id="hud-count"></span><b class="hud-clock" id="hud-clock"></b></div></div>
         <div class="timer"><i id="timer"></i></div>
       </div>
       <div class="stage" id="stage">
@@ -220,7 +232,7 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
 <script>
 (() => {
 const TAU = Math.PI * 2;
-const PER_DAY = 7;
+const PER_DAY = 7, DUR = 30000;
 const $ = s => document.querySelector(s);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -443,9 +455,9 @@ const DRILLS = [
   how: v => `Five lights switch on, one at a time. The instant they all go dark, tap. Tap early and it's a false start.${v.decoy ? ' Careful: some lights flicker to fake you out.' : ''}`,
   run(api, v) {
     const P = api.px(), { W, H } = P, N = 5, lamp = Math.round(W / 8), gap = Math.round(W / 40);
-    const holds = Array.from({ length: N }, () => 250 + api.rng() * 2300), decoyAt = v.decoy ? [1, 3] : [];
+    const decoyAt = v.decoy ? [1, 3, 5] : [];
     const times = []; let lit = 0, state = 'rest', t0 = 0, trial = 0, tok = 0, msg = 'READY', sub = '', flick = -1;
-    api.prompt('Tap the screen, or press Space, the moment the lights go out.'); api.timer(1);
+    api.prompt('Tap the screen, or press Space, the moment the lights go out.');
     api.loop(() => {
       P.clear();
       const total = N * lamp + (N - 1) * gap, x0 = (W - total) / 2, y = H * .4;
@@ -455,10 +467,10 @@ const DRILLS = [
       P.text(sub, W / 2, H * .8, css('--muted'), 8);
     });
     function startTrial() {
-      const my = ++tok; state = 'arming'; lit = 0; flick = -1; msg = 'WAIT'; sub = `START ${trial + 1} OF ${N}`;
+      const my = ++tok, hold = 250 + api.rng() * 2300; state = 'arming'; lit = 0; flick = -1; msg = 'WAIT'; sub = `START ${trial + 1}`;
       for (let i = 1; i <= N; i++) api.later(() => { if (tok === my) lit = i; }, 450 * i);
       if (decoyAt.includes(trial)) {
-        const at = 450 * N + holds[trial] * .45;
+        const at = 450 * N + hold * .45;
         api.later(() => { if (tok === my) flick = 2; }, at);
         api.later(() => { if (tok === my) flick = -1; }, at + 220);
       }
@@ -466,13 +478,18 @@ const DRILLS = [
         if (tok !== my) return;
         lit = 0; msg = 'GO!'; state = 'go'; t0 = performance.now();
         api.later(() => { if (tok === my && state === 'go') { msg = 'ZZZ'; record(600, 'COUNTS AS 600MS'); } }, 1500);
-      }, 450 * N + holds[trial]);
+      }, 450 * N + hold);
     }
     function record(ms, note) {
-      tok++; state = 'rest'; times.push(ms); sub = note; trial++; api.timer(1 - trial / N);
-      if (trial >= N) api.later(() => { const avg = Math.round(times.reduce((a, b) => a + b, 0) / N); api.done((480 - avg) / 300 * 100, `Average ${avg} ms`); }, 900);
-      else api.later(startTrial, 1100);
+      tok++; state = 'rest'; times.push(ms); sub = note; trial++;
+      api.later(startTrial, 1100);
     }
+    /* A start still running at the buzzer doesn't count. Fewer than five starts are padded with 600 ms each, so stalling never helps. */
+    api.end(() => {
+      const avg = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
+      const padded = times.concat(Array(Math.max(0, 5 - times.length)).fill(600)), scored = padded.reduce((a, b) => a + b, 0) / padded.length;
+      api.done((480 - scored) / 300 * 100, times.length ? `Average ${avg} ms · ${times.length} starts` : 'No starts');
+    });
     function tap(e) {
       if (e.type === 'keydown') { if (e.code !== 'Space') return; e.preventDefault(); }
       if (state === 'arming') { lit = 0; msg = 'TOO SOON'; record(500, 'COUNTS AS 500MS'); }
@@ -485,19 +502,19 @@ const DRILLS = [
 {
   id: 'shuffle', name: 'Shell Shuffle', skill: 'Multiple object tracking', cat: 'attention',
   variant: r => ({ shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), fast: r() < .4 }),
-  how: v => `A few ${plural(v.shape)} blink, then they all start shuffling. Keep your eyes on the ones that blinked and tap them when the shuffling stops. Two rounds.`,
+  how: v => `A few ${plural(v.shape)} blink, then they all start shuffling. Keep your eyes on the ones that blinked and tap them when the shuffling stops.`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .09), r = s / 2, pad = 4, STEPS = 420;
-    const ROUNDS = [{ n: 8, t: 3, sp: v.fast ? .36 : .30 }, { n: 10, t: 4, sp: v.fast ? .46 : .40 }];
-    let ri = 0, hit = 0, tot = 0, items, phase, phaseT, steps, picks, last = null;
+    const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .09), r = s / 2, pad = 4, STEPS = 300, f = v.fast ? .06 : 0;
+    const ROUNDS = [{ n: 8, t: 3, sp: .30 + f }, { n: 10, t: 4, sp: .40 + f }, { n: 11, t: 4, sp: .46 + f }, { n: 12, t: 5, sp: .50 + f }];
+    let ri = 0, hit = 0, tot = 0, items, phase, phaseT, steps, picks, cfg, last = null;
     function setup() {
-      const cfg = ROUNDS[ri]; items = []; let guard = 0;
+      cfg = ROUNDS[Math.min(ri, ROUNDS.length - 1)]; items = []; let guard = 0;
       while (items.length < cfg.n && guard++ < 5000) {
         const x = pad + r + rng() * (W - 2 * pad - 2 * r), y = pad + r + rng() * (H - 2 * pad - 2 * r);
         if (items.every(b => Math.hypot(b.x - x, b.y - y) > s * 1.4)) items.push({ x, y, a: rng() * TAU, tg: items.length < cfg.t, sel: false });
       }
-      phase = 'show'; phaseT = 0; steps = 0; picks = 0; api.timer(1);
-      api.prompt(`Round ${ri + 1} of 2. Watch the ${cfg.t} that blink.`);
+      phase = 'show'; phaseT = 0; steps = 0; picks = 0;
+      api.prompt(`Round ${ri + 1}. Watch the ${cfg.t} that blink.`);
     }
     function step(sp) {
       const vel = sp * W / 60, lo = pad + r, hi = W - pad - r;
@@ -513,12 +530,10 @@ const DRILLS = [
     }
     api.loop(now => {
       if (last == null) last = now; const dt = Math.min(.05, (now - last) / 1000); last = now; phaseT += dt;
-      const cfg = ROUNDS[ri];
-      if (phase === 'show' && phaseT > 2.2) { phase = 'move'; phaseT = 0; api.prompt('Keep watching…'); }
+      if (phase === 'show' && phaseT > 2) { phase = 'move'; phaseT = 0; api.prompt('Keep watching…'); }
       if (phase === 'move') {
         const target = Math.min(STEPS, Math.floor(phaseT * 60));
         while (steps < target) { step(cfg.sp); steps++; }
-        api.timer(1 - steps / STEPS);
         if (steps >= STEPS) { phase = 'pick'; api.prompt(`Tap the ${cfg.t} you followed. 0 of ${cfg.t} picked.`); }
       }
       P.clear();
@@ -535,7 +550,7 @@ const DRILLS = [
     });
     api.on(P.canvas, 'pointerdown', e => {
       if (phase !== 'pick') return;
-      const p = P.pos(e), cfg = ROUNDS[ri]; let best = null, bd = s;
+      const p = P.pos(e); let best = null, bd = s;
       for (const b of items) { const d = Math.hypot(b.x - p.x, b.y - p.y); if (d < bd) { bd = d; best = b; } }
       if (!best) return;
       best.sel = !best.sel; picks += best.sel ? 1 : -1;
@@ -543,22 +558,24 @@ const DRILLS = [
       if (picks === cfg.t) {
         const h = items.filter(b => b.sel && b.tg).length; hit += h; tot += cfg.t; phase = 'reveal';
         api.prompt(h === cfg.t ? `All ${cfg.t}. Nothing gets past you.` : `${h} of ${cfg.t}. The yellow boxes got away.`);
-        api.later(() => { ri++; if (ri < ROUNDS.length) setup(); else api.done(hit / tot * 100, `${hit} of ${tot} followed`); }, 1600);
+        api.later(() => { ri++; setup(); }, 1400);
       }
     });
+    /* Only finished rounds count, scored against at least the first two (seven targets). */
+    api.end(() => api.done(hit / Math.max(tot, 7) * 100, tot ? `${hit} of ${tot} followed` : 'No rounds finished'));
     setup();
   }
 },
 {
   id: 'headcount', name: 'Headcount', skill: 'Rapid counting', cat: 'attention',
   variant: r => ({ modes: [0, 1, 2].map(() => pick(r, ['shape', 'color', 'both'])) }),
-  how: () => 'A crowd of shapes drifts across the screen for a few seconds. Each round counts one thing: a SHAPE in any color, a COLOR in any shape, or a shape AND color together. The round tells you which before it starts. Three rounds, each one quicker.',
+  how: () => 'A crowd of shapes drifts by for a few seconds, then you say how many. Each round counts one thing: a SHAPE in any color, a COLOR in any shape, or both together. The round tells you which first. Rounds get quicker.',
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .085), r = s / 2, pad = 4;
     const ROUNDS = [{ n: 15, ms: 4000, max: 7 }, { n: 19, ms: 3500, max: 9 }, { n: 23, ms: 3000, max: 11 }];
-    let ri = 0, pts = 0, exact = 0, items = [], phase = 'intro', k, isTarget, ts, tc, mode, phaseStart = 0, last = null;
+    let ri = 0, pts = 0, exact = 0, items = [], phase = 'intro', k, isTarget, ts, tc, mode, cfg, phaseStart = 0, last = null;
     function setup() {
-      const cfg = ROUNDS[ri]; mode = v.modes[ri];
+      cfg = ROUNDS[Math.min(ri, ROUNDS.length - 1)]; mode = v.modes[ri % v.modes.length];
       ts = pick(rng, SHAPES); tc = pick(rng, COLOR_NAMES); k = 3 + Math.floor(rng() * (cfg.max - 2));
       const otherS = SHAPES.filter(x => x !== ts), otherC = COLOR_NAMES.filter(x => x !== tc);
       const make = i => {
@@ -576,25 +593,27 @@ const DRILLS = [
         items.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, shape, color });
       }
       const label = mode === 'shape' ? `every ${icon(ts, INK)} ${ts}. Shape only, any color.` : mode === 'color' ? `everything ${colorWord(tc)}. Color only, any shape.` : `only ${colorWord(tc)} ${icon(ts, tc)} ${plural(ts)}. Shape and color both have to match.`;
-      phase = 'intro'; phaseStart = performance.now(); api.timer(1); api.hideControls();
-      api.prompt(`Round ${ri + 1} of 3. Count ${label}`, true);
+      phase = 'intro'; phaseStart = performance.now(); api.hideControls();
+      api.prompt(`Round ${ri + 1}. Count ${label}`, true);
     }
     function answer(n) {
       if (phase !== 'ask') return;
       const diff = Math.abs(n - k); pts += [1, .5, .15][diff] || 0; if (!diff) exact++;
       phase = 'reveal'; api.hideControls();
       api.prompt(diff === 0 ? `Exactly ${k}. Spot on.` : `There were ${k}. You said ${n}.`);
-      api.later(() => { ri++; if (ri < ROUNDS.length) setup(); else api.done(pts / ROUNDS.length * 100, `${exact} of 3 exact`); }, 1700);
+      ri++; api.later(setup, 1300);
     }
+    /* Three rounds fit in the clock; a fourth that gets an answer in counts too. */
+    api.end(() => api.done(pts / Math.max(ri, 3) * 100, `${exact} of ${ri} exact`));
     api.loop(now => {
       if (last == null) last = now; const dt = Math.min(.05, (now - last) / 1000); last = now;
-      const cfg = ROUNDS[ri], el = now - phaseStart; P.clear();
+      const el = now - phaseStart; P.clear();
       if (phase === 'intro') {
         P.text(mode === 'shape' ? 'COUNT THE SHAPE' : mode === 'color' ? 'COUNT THE COLOR' : 'SHAPE AND COLOR', W / 2, H * .2, css('--muted'), 8);
         if (mode === 'color') P.text(tc.toUpperCase(), W / 2, H * .52, PAL[tc], 18);
         else P.spr(ts, mode === 'shape' ? INK : tc, Math.round(W * .3), W / 2, H * .52);
         P.text(mode === 'shape' ? 'ANY COLOR' : mode === 'color' ? 'ANY SHAPE' : 'BOTH MUST MATCH', W / 2, H * .84, css('--muted'), 8);
-        if (el > 2300) { phase = 'crowd'; phaseStart = now; }
+        if (el > 1800) { phase = 'crowd'; phaseStart = now; }
         return;
       }
       if (phase === 'crowd') {
@@ -604,8 +623,7 @@ const DRILLS = [
           if (b.x < lo || b.x > hi) { b.vx *= -1; b.x = clamp(b.x, lo, hi); }
           if (b.y < lo || b.y > hi) { b.vy *= -1; b.y = clamp(b.y, lo, hi); }
         }
-        api.timer(1 - el / cfg.ms);
-        if (el >= cfg.ms) { phase = 'ask'; api.timer(0); api.showKeys(12, answer); }
+        if (el >= cfg.ms) { phase = 'ask'; api.showKeys(12, answer); }
       }
       if (phase === 'ask') { P.text('?', W / 2, H / 2, css('--accent'), 32); return; }
       for (const b of items) P.spr(b.shape, b.color, s, b.x, b.y);
@@ -623,7 +641,7 @@ const DRILLS = [
     : `Tap everything except ${colorWord(v.color)}. Color only, any shape.`,
   how(v) { return `Shapes pop up all over the grid. ${this.rule(v)} Tap the wrong one and it's a foul.`; },
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, D = 24000, pad = 6, cell = (W - 2 * pad) / 3, s = Math.round(cell * .62);
+    const P = api.px(), { W, H } = P, rng = api.rng, D = DUR, pad = 6, cell = (W - 2 * pad) / 3, s = Math.round(cell * .62);
     const goP = v.type === 'except' ? .78 : .68;
     const sched = [], busy = Array(9).fill(0); let t = 800;
     while (t < D - 700) {
@@ -643,7 +661,7 @@ const DRILLS = [
     const tally = () => api.prompt(`${rule}<br>${hits} caught · ${fouls} foul${fouls === 1 ? '' : 's'}`, true);
     tally();
     api.loop(now => {
-      const el = now - start; api.timer(1 - el / D); P.clear();
+      const el = now - start; P.clear();
       for (let i = 0; i < 9; i++) P.frame(pad + (i % 3) * cell + 2, pad + Math.floor(i / 3) * cell + 2, cell - 4, cell - 4, css('--edge'));
       for (const x of sched) {
         if (x.done || el < x.t || el > x.t + x.win) continue;
@@ -661,7 +679,7 @@ const DRILLS = [
       fx.push({ x: pad + ci * cell + 2, y: pad + ri * cell + 2, ok: x.go, t: performance.now() });
       tally();
     });
-    api.later(() => api.done(100 * hits / goTotal - fouls * 10, `${hits} of ${goTotal} caught · ${fouls} foul${fouls === 1 ? '' : 's'}`), D + 300);
+    api.end(() => api.done(100 * hits / goTotal - fouls * 10, `${hits} of ${goTotal} caught · ${fouls} foul${fouls === 1 ? '' : 's'}`));
   }
 },
 {
@@ -669,10 +687,10 @@ const DRILLS = [
   variant: r => ({ base: pick(r, ['fan', 'drop', 'dome']) }),
   how: () => `Every grid has exactly one shape that is a little bit different: ${CB ? '' : 'a shade off, '}a size off, turned the wrong way, or a different shape. Tap it. Grids get bigger, and from the 8th grid on the rest of the crowd starts mixing things up too. Wrong taps cost two seconds.`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, SIZES = [3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9], D = 30000, pad = 4;
+    const P = api.px(), { W, H } = P, rng = api.rng, SIZES = [3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9], pad = 4;
     const NEAR = [['red', 'pink'], ['blue', 'purple'], ['green', 'cyan'], ['orange', 'yellow'], ['pink', 'purple']];
     const SHAPE_PAIRS = [['dome', 'drop'], ['bowtie', 'hourglass'], ['petal', 'drop'], ['clover', 'gate'], ['ring', 'gate']];
-    let found = 0, ri = 0, board, penalty = 0, fx = [];
+    let found = 0, ri = 0, board, fx = [];
     function make() {
       const n = SIZES[Math.min(ri, SIZES.length - 1)], cell = (W - 2 * pad) / n, s = Math.max(7, Math.round(cell * .72)), odd = Math.floor(rng() * n * n);
       const kind = pick(rng, CB ? ['size', 'turn', 'shape'] : ['color', 'size', 'turn', 'shape']), noisy = ri >= 7;
@@ -687,11 +705,9 @@ const DRILLS = [
       for (let i = 0; i < n * n; i++) items.push({ x: pad + cell * (i % n + .5), y: pad + cell * (Math.floor(i / n) + .5), ...(i === odd ? b : a), ...noise() });
       board = { n, odd, items, cell };
     }
-    const start = performance.now();
     api.prompt('Find the one that\'s different.');
+    api.end(() => api.done(found * 100 / 13, `${found} found`));
     api.loop(now => {
-      const left = D - (now - start) - penalty; api.timer(left / D);
-      if (left <= 0) { api.done(found * 100 / 13, `${found} found`); return false; }
       P.clear();
       for (const it of board.items) P.spr(it.shape, it.color, it.s, it.x, it.y, it.rot);
       for (const f of fx) if (now - f.t < 350) P.frame(f.x - f.c / 2, f.y - f.c / 2, f.c, f.c, f.ok ? PAL.green : PAL.red, 2);
@@ -701,7 +717,7 @@ const DRILLS = [
       if (ci < 0 || rj < 0 || ci >= n || rj >= n) return;
       const i = rj * n + ci, it = board.items[i];
       if (i === board.odd) { found++; ri++; fx.push({ x: it.x, y: it.y, c: board.cell, ok: true, t: performance.now() }); make(); api.prompt(ri === 7 ? `${found} found. Now the crowd mixes it up.` : `${found} found. Keep going.`); }
-      else { penalty += 2000; fx.push({ x: it.x, y: it.y, c: board.cell, ok: false, t: performance.now() }); }
+      else { api.cost(2000); fx.push({ x: it.x, y: it.y, c: board.cell, ok: false, t: performance.now() }); }
     });
     make();
   }
@@ -709,17 +725,17 @@ const DRILLS = [
 {
   id: 'intercept', name: 'Intercept', skill: 'Anticipation', cat: 'react',
   variant: r => ({ shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), fog: r() < .5 ? .4 : .33 }),
-  how: v => `A ${v.shape} flies toward the yellow line on the right, then vanishes into the static. Tap where it will cross the line before it gets there. It can bounce off the top and bottom. Five throws.`,
+  how: v => `A ${v.shape} flies toward the yellow line on the right, then vanishes into the static. Tap where it will cross the line before it gets there. It can bounce off the top and bottom.`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .07), r = s / 2, pad = 4, fogX = Math.round(W * v.fog), endX = W - pad - 3, N = 5;
-    let k = 0, sum = 0, caught = 0, path, phase, phaseStart, guess, ink = css('--ink');
+    const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .07), r = s / 2, pad = 4, fogX = Math.round(W * v.fog), endX = W - pad - 3;
+    let k = 0, thrown = 0, sum = 0, caught = 0, path, phase, phaseStart, guess, ink = css('--ink');
     function plan() {
-      const y0 = pad + r + rng() * (H - 2 * pad - 2 * r), ang = (rng() * 2 - 1) * (.28 + .13 * k), sp = W * (.5 + rng() * .25 + k * .05);
+      const lv = Math.min(k, 4), y0 = pad + r + rng() * (H - 2 * pad - 2 * r), ang = (rng() * 2 - 1) * (.28 + .13 * lv), sp = W * (.5 + rng() * .25 + lv * .05);
       const pts = [], lo = pad + r, hi = H - pad - r; let x = pad + r, y = y0, vx = Math.cos(ang) * sp / 60, vy = Math.sin(ang) * sp / 60;
       while (x < endX) { pts.push([x, y]); x += vx; y += vy; if (y < lo) { y = 2 * lo - y; vy = -vy; } if (y > hi) { y = 2 * hi - y; vy = -vy; } }
       pts.push([endX, y]); return pts;
     }
-    function setup() { path = plan(); phase = 'ready'; phaseStart = performance.now(); guess = null; api.timer(1 - k / N); api.prompt(`Throw ${k + 1} of ${N}. Tap where it will cross the line.`); }
+    function setup() { path = plan(); phase = 'ready'; phaseStart = performance.now(); guess = null; api.prompt(`Throw ${k + 1}. Tap where it will cross the line.`); }
     const tolerance = () => s * 1.2;
     api.loop(now => {
       const el = now - phaseStart; let idx = 0;
@@ -729,9 +745,9 @@ const DRILLS = [
         if (idx >= path.length - 1) {
           phase = 'reveal';
           const endY = path[path.length - 1][1], err = guess == null ? Infinity : Math.abs(guess - endY);
-          sum += Math.max(0, 1 - err / (H * .2)); if (err < tolerance()) caught++;
+          sum += Math.max(0, 1 - err / (H * .2)); thrown++; if (err < tolerance()) caught++;
           api.prompt(guess == null ? 'Too late. Tap before it reaches the line.' : err < tolerance() ? 'Intercepted!' : err < H * .1 ? 'Just missed.' : 'Way off. Read the angle.');
-          api.later(() => { k++; if (k < N) setup(); else { api.timer(0); api.done(sum / N * 100, `${caught} of ${N} intercepted`); } }, 1500);
+          api.later(() => { k++; setup(); }, 1200);
         }
       } else idx = path.length - 1;
       P.clear();
@@ -747,6 +763,8 @@ const DRILLS = [
       if (bx < fogX || phase === 'reveal') P.spr(v.shape, v.color, s, bx, by);
     });
     api.on(P.canvas, 'pointerdown', e => { if (phase === 'fly' && guess == null) guess = clamp(P.pos(e).y, pad + r, H - pad - r); });
+    /* Scored against at least six throws, about what fits in the clock. */
+    api.end(() => api.done(sum / Math.max(thrown, 6) * 100, `${caught} of ${thrown} intercepted`));
     setup();
   }
 },
@@ -755,7 +773,7 @@ const DRILLS = [
   variant: r => ({ vertical: r() < .4, flip: r() < .5 }),
   how: v => `Five arrows in a ${v.vertical ? 'column' : 'row'}. Which way is the middle one pointing: up, down, left or right? The others are trying to fake you out.${v.flip ? ` Twist: when the arrows are ${colorWord('pink')}, answer the opposite way.` : ''} Use the buttons or arrow keys.`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, D = 25000, s = Math.round(W / 7), gap = Math.round(W / 40);
+    const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W / 7), gap = Math.round(W / 40);
     /* Left, up, down, right. OPP maps each to its opposite. */
     const A = [Math.PI, -Math.PI / 2, Math.PI / 2, 0], OPP = [3, 2, 1, 0], NAMES = ['Left', 'Up', 'Down', 'Right'];
     let right = 0, wrong = 0, cur = null, locked = true, flashCol = null;
@@ -767,7 +785,7 @@ const DRILLS = [
       }, 140);
     }
     api.loop(now => {
-      api.timer(1 - (now - start) / D); P.clear();
+      P.clear();
       if (!cur) return;
       const col = flashCol || (cur.pink ? 'pink' : 'cyan'), total = 5 * s + 4 * gap;
       for (let i = 0; i < 5; i++) {
@@ -785,18 +803,16 @@ const DRILLS = [
     const keys = ['ArrowLeft', 'ArrowUp', 'ArrowDown', 'ArrowRight'];
     api.on(window, 'keydown', e => { const i = keys.indexOf(e.code); if (i >= 0) { e.preventDefault(); answer(i); } });
     api.prompt('Which way is the middle arrow pointing?');
-    const start = performance.now();
-    api.later(() => api.done((right - wrong) / 28 * 100, `${right} right · ${wrong} wrong`), D);
+    api.end(() => api.done((right - wrong) / 34 * 100, `${right} right · ${wrong} wrong`));
     next();
   }
 },
 {
   id: 'echo', name: 'Echo', skill: 'Sequence memory', cat: 'memory',
   variant: r => ({ grid: r() < .6 ? 3 : 4, reverse: r() < .3, color: pick(r, ['cyan', 'pink', 'green', 'orange']) }),
-  how: v => `Tiles light up one after another. Tap them back in the ${v.reverse ? 'reverse order, last one first' : 'same order'}. Each pattern you nail adds a tile; a miss drops one. Clear as many as you can in forty seconds.`,
+  how: v => `Tiles light up one after another. Tap them back in the ${v.reverse ? 'reverse order, last one first' : 'same order'}. Each pattern you nail adds a tile; a miss drops one. Clear as many as you can.`,
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, n = v.grid, pad = 8, cell = (W - 2 * pad) / n, ts = Math.round(cell - 6);
-    const D = 40000, start = performance.now();
     let len = 3, best = 0, pts = 0, cleared = 0, seq = [], phase = 'watch', litIdx = -1, input = [], fb = null;
     function round() {
       seq = []; let prev = -1;
@@ -805,11 +821,9 @@ const DRILLS = [
       seq.forEach((c, i) => { api.later(() => { litIdx = c; }, 500 + i * 600); api.later(() => { litIdx = -1; }, 500 + i * 600 + 420); });
       api.later(() => { phase = 'repeat'; api.prompt(v.reverse ? 'Now tap them backwards.' : 'Your turn.'); }, 500 + len * 600);
     }
-    /* Points are the length of each cleared pattern; 25 (3+4+5+6+7) is a perfect run in forty seconds. */
-    const finish = () => api.done(pts / 25 * 100, cleared ? `${cleared} cleared · longest ${best}` : 'No patterns cleared');
-    api.loop(now => {
-      const left = D - (now - start); api.timer(left / D);
-      if (left <= 0) { phase = 'over'; finish(); return false; }
+    /* Points are the length of each cleared pattern; 18 (3+4+5+6) is a perfect run in thirty seconds. */
+    api.end(() => { phase = 'over'; api.done(pts / 18 * 100, cleared ? `${cleared} cleared · longest ${best}` : 'No patterns cleared'); });
+    api.loop(() => {
       P.clear();
       for (let i = 0; i < n * n; i++) {
         const x = pad + (i % n) * cell + cell / 2, y = pad + Math.floor(i / n) * cell + cell / 2;
@@ -841,14 +855,14 @@ const DRILLS = [
 {
   id: 'snapshot', name: 'Snapshot', skill: 'Visual memory', cat: 'memory',
   variant: r => ({ grid: r() < .5 ? 5 : 6, shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), flash: r() < .5 ? 900 : 700 }),
-  how: v => `A few ${plural(v.shape)} flash on the grid for a split second. Tap every square where one appeared. Five rounds, more ${plural(v.shape)} each time.`,
+  how: v => `A few ${plural(v.shape)} flash on the grid for a split second. Tap every square where one appeared. More ${plural(v.shape)} each round.`,
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, n = v.grid, pad = 6, cell = (W - 2 * pad) / n, s = Math.round(cell * .7);
-    const ROUNDS = [3, 4, 5, 6, 7];
+    const ROUNDS = [3, 4, 5, 6, 7, 8];
     let ri = 0, phase, cells, picked, got = 0, tot = 0;
     function round() {
-      const k = ROUNDS[ri]; cells = shuffle(rng, [...Array(n * n).keys()]).slice(0, k); picked = [];
-      phase = 'show'; api.prompt(`Round ${ri + 1} of 5. Memorize ${k}.`); api.timer(1 - ri / ROUNDS.length);
+      const k = ROUNDS[Math.min(ri, ROUNDS.length - 1)]; cells = shuffle(rng, [...Array(n * n).keys()]).slice(0, k); picked = [];
+      phase = 'show'; api.prompt(`Round ${ri + 1}. Memorize ${k}.`);
       api.later(() => { phase = 'pick'; api.prompt(`Tap the ${k} squares. 0 of ${k}.`); }, v.flash);
     }
     api.loop(() => {
@@ -869,15 +883,17 @@ const DRILLS = [
       if (phase !== 'pick') return;
       const p = P.pos(e), ci = Math.floor((p.x - pad) / cell), rj = Math.floor((p.y - pad) / cell);
       if (ci < 0 || rj < 0 || ci >= n || rj >= n) return;
-      const c = rj * n + ci, k = ROUNDS[ri];
+      const c = rj * n + ci, k = cells.length;
       if (picked.includes(c)) picked = picked.filter(x => x !== c); else picked.push(c);
       api.prompt(`Tap the ${k} squares. ${picked.length} of ${k}.`);
       if (picked.length === k) {
         const h = picked.filter(x => cells.includes(x)).length; got += h; tot += k; phase = 'reveal';
         api.prompt(h === k ? 'Perfect recall.' : `${h} of ${k}. The faded ones were missed.`);
-        api.later(() => { ri++; if (ri < ROUNDS.length) round(); else { api.timer(0); api.done(got / tot * 100, `${got} of ${tot} remembered`); } }, 1200);
+        api.later(() => { ri++; round(); }, 1000);
       }
     });
+    /* Only finished rounds count, scored against at least the first four (18 squares). */
+    api.end(() => api.done(got / Math.max(tot, 18) * 100, tot ? `${got} of ${tot} remembered` : 'No rounds finished'));
     cells = []; picked = []; phase = 'wait';
     api.later(round, 500);
   }
@@ -899,7 +915,7 @@ const DRILLS = [
     }
     const matches = items.filter(x => x.match).length; let cur = -1, visible = false, hits = 0, fa = 0, fb = null;
     items.forEach((it, i) => {
-      api.later(() => { cur = i; visible = true; fb = null; api.timer(1 - i / N); }, 600 + i * (ON + OFF));
+      api.later(() => { cur = i; visible = true; fb = null; }, 600 + i * (ON + OFF));
       api.later(() => { visible = false; }, 600 + i * (ON + OFF) + ON);
     });
     api.loop(() => {
@@ -917,20 +933,21 @@ const DRILLS = [
     api.showButtons([{ html: 'MATCH', label: 'Match', fn: press }], 'one');
     api.on(window, 'keydown', e => { if (e.code === 'Space') { e.preventDefault(); press(); } });
     api.prompt(`Same as the one ${nb} back?`);
-    api.later(() => api.done((hits - fa * .7) / matches * 100, `${hits} of ${matches} matches · ${fa} false alarm${fa === 1 ? '' : 's'}`), 600 + N * (ON + OFF) + 200);
+    api.end(() => api.done((hits - fa * .7) / matches * 100, `${hits} of ${matches} matches · ${fa} false alarm${fa === 1 ? '' : 's'}`));
   }
 },
 {
   id: 'bullseye', name: 'Bullseye', skill: 'Timing', cat: 'react',
   variant: r => ({ blind: r() < .45, color: pick(r, COLOR_NAMES), speed: .9 + r() * .35 }),
-  how: v => `A block slides back and forth along the track. Stop it dead center in the target by tapping (or pressing Space).${v.blind ? ' The middle of the track is dark, so you have to feel the timing.' : ''} Eight shots.`,
+  how: v => `A block slides back and forth along the track. Stop it dead center in the target by tapping (or pressing Space).${v.blind ? ' The middle of the track is dark, so you have to feel the timing.' : ''}`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, N = 8, s = Math.round(W * .08), y = H / 2, lo = 10, hi = W - 10;
-    let k = 0, sum = 0, bulls = 0, phase, x, dir, sp, zone, zw, started, result = null, last = null;
+    const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .08), y = H / 2, lo = 10, hi = W - 10;
+    let k = 0, shots = 0, sum = 0, bulls = 0, phase, x, dir, sp, zone, zw, started, result = null, last = null;
     function setup() {
-      zone = lo + 20 + rng() * (hi - lo - 40); zw = Math.round(W * (.1 - k * .006)); sp = W * (.7 + rng() * .4 + k * .06) * v.speed;
-      x = lo; dir = 1; phase = 'move'; started = performance.now(); result = null; last = null; api.timer(1 - k / N);
-      api.prompt(`Shot ${k + 1} of ${N}. Stop it in the target.`);
+      const lv = Math.min(k, 9);
+      zone = lo + 20 + rng() * (hi - lo - 40); zw = Math.round(W * (.1 - lv * .006)); sp = W * (.7 + rng() * .4 + lv * .06) * v.speed;
+      x = lo; dir = 1; phase = 'move'; started = performance.now(); result = null; last = null;
+      api.prompt(`Shot ${k + 1}. Stop it in the target.`);
     }
     api.loop(now => {
       if (last == null) last = now; const dt = Math.min(.05, (now - last) / 1000); last = now;
@@ -950,12 +967,14 @@ const DRILLS = [
     function shoot(e) {
       if (e && e.type === 'keydown') { if (e.code !== 'Space') return; e.preventDefault(); }
       if (phase !== 'move') return;
-      phase = 'result'; const err = Math.abs(x - zone), sc = Math.max(0, 1 - err / (W * .18)); sum += sc;
+      phase = 'result'; const err = Math.abs(x - zone), sc = Math.max(0, 1 - err / (W * .18)); sum += sc; shots++;
       if (err <= zw / 2) bulls++;
       result = { col: err <= 2 ? PAL.green : err <= zw / 2 ? PAL.cyan : PAL.red, label: err <= 2 ? 'BULLSEYE' : err <= zw / 2 ? 'ON TARGET' : 'MISS' };
-      api.later(() => { k++; if (k < N) setup(); else { api.timer(0); api.done(sum / N * 100, `${bulls} of ${N} on target`); } }, 800);
+      api.later(() => { k++; setup(); }, 700);
     }
     api.on(api.stage, 'pointerdown', shoot); api.on(window, 'keydown', shoot);
+    /* Scored against at least eight shots. */
+    api.end(() => api.done(sum / Math.max(shots, 8) * 100, `${bulls} of ${shots} on target`));
     setup();
   }
 },
@@ -964,7 +983,7 @@ const DRILLS = [
   variant: r => { const [a, b] = shuffle(r, COLOR_NAMES).slice(0, 2); return { a, b, shape: pick(r, ['dome', 'drop', 'clover']) }; },
   how: v => `A burst of ${icon(v.shape, v.a)} ${v.a} and ${icon(v.shape, v.b)} ${v.b} ${plural(v.shape)} flashes for a moment. Which color had more? No time to count, go with your gut.`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, D = 25000, s = Math.round(W * .06), pad = 6;
+    const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .06), pad = 6;
     let right = 0, wrong = 0, cur = null, visible = false, locked = true, fb = null, n = 0;
     function next() {
       locked = true; visible = false; fb = null;
@@ -980,7 +999,7 @@ const DRILLS = [
       }, 250);
     }
     api.loop(now => {
-      api.timer(1 - (now - start) / D); P.clear();
+      P.clear();
       if (cur && visible) for (const p of cur.pts) P.spr(v.shape, v[p.c], s, p.x, p.y);
       else if (!locked) P.text('?', W / 2, H / 2, css('--muted'), 16);
       if (fb) P.frame(6, 6, W - 12, H - 12, fb, 2);
@@ -994,9 +1013,8 @@ const DRILLS = [
     api.showButtons([{ html: icon(v.shape, v.a), label: v.a, fn: () => answer('a') }, { html: icon(v.shape, v.b), label: v.b, fn: () => answer('b') }]);
     api.on(window, 'keydown', e => { if (e.code === 'ArrowLeft') answer('a'); if (e.code === 'ArrowRight') answer('b'); });
     api.prompt('Which color had more?');
-    const start = performance.now();
-    /* About 15 flashes fit in the time. 14 right is a perfect score; a wrong answer costs half a right one. */
-    api.later(() => api.done((right - wrong * .5) / 14 * 100, `${right} right · ${wrong} wrong`), D);
+    /* About 25 flashes fit in the time. 20 right, net of wrong answers, is a perfect score. Wrong costs a full right one, so mashing a 50/50 nets nothing. */
+    api.end(() => api.done((right - wrong) / 20 * 100, `${right} right · ${wrong} wrong`));
     next();
   }
 },
@@ -1005,13 +1023,13 @@ const DRILLS = [
   variant: r => ({ shapes: shuffle(r, SHAPES).slice(0, 6), color: pick(r, ['cyan', 'yellow', 'pink', 'green', 'orange']), remap: r() < .4 }),
   how: v => `The key up top matches six shapes to the numbers 1 to 6. When a shape appears, tap its number. As many as you can.${v.remap ? ' Twist: halfway through, the key gets reshuffled.' : ''}`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, D = 26000, cw = W / 6, ks = Math.round(cw * .62), big = Math.round(W * .34);
+    const P = api.px(), { W, H } = P, rng = api.rng, cw = W / 6, ks = Math.round(cw * .62), big = Math.round(W * .34);
     let key = v.shapes.slice(), right = 0, wrong = 0, cur = -1, locked = true, fb = null, remapped = false, remapAt = -1e9;
     function next() { let c; do { c = Math.floor(rng() * 6); } while (c === cur); cur = c; locked = false; }
     const start = performance.now();
     api.loop(now => {
-      const el = now - start; api.timer(1 - el / D);
-      if (v.remap && !remapped && el > D / 2) { remapped = true; key = shuffle(rng, key); remapAt = now; api.prompt('New key! Look again.'); }
+      const el = now - start;
+      if (v.remap && !remapped && el > DUR / 2) { remapped = true; key = shuffle(rng, key); remapAt = now; api.prompt('New key! Look again.'); }
       P.clear();
       const blink = now - remapAt < 700 && Math.floor((now - remapAt) / 120) % 2 === 0;
       P.rect(0, 0, W, H * .3, blink ? UI.fogLine : UI.deep);
@@ -1028,7 +1046,7 @@ const DRILLS = [
     api.showKeys(6, answer, 'three');
     api.on(window, 'keydown', e => { if (/^Digit[1-6]$/.test(e.code)) answer(+e.code.slice(5)); });
     api.prompt('Find the shape in the key, tap its number.');
-    api.later(() => api.done((right - wrong) / 26 * 100, `${right} right · ${wrong} wrong`), D);
+    api.end(() => api.done((right - wrong) / 30 * 100, `${right} right · ${wrong} wrong`));
     api.later(next, 300);
   }
 },
@@ -1037,15 +1055,12 @@ const DRILLS = [
   variant: r => ({ fams: shuffle(r, ['rot', 'count', 'color', 'shape']).slice(0, 3) }),
   how: v => `Three tiles follow a pattern. Pick the tile that comes next. Today's patterns play with ${famList(v.fams)}. Later puzzles mix two rules at once.`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, D = 30000, pad = 6, gap = 5, ts = Math.floor((W - 2 * pad - 3 * gap) / 4), os = Math.min(ts * 1.15, (W - 2 * pad - 2 * gap * 2) / 3);
-    let level = 0, right = 0, wrong = 0, cur, locked = false, fb = null, paused = 0, pausedAt = 0, over = false;
+    const P = api.px(), { W, H } = P, rng = api.rng, pad = 6, gap = 5, ts = Math.floor((W - 2 * pad - 3 * gap) / 4), os = Math.min(ts * 1.15, (W - 2 * pad - 2 * gap * 2) / 3);
+    let level = 0, right = 0, wrong = 0, cur, locked = false, fb = null;
     const optX = i => W / 2 + (i - 1) * (os + gap * 2), optY = H * .74;
-    function next() { if (pausedAt) { paused += performance.now() - pausedAt; pausedAt = 0; } cur = makeSeries(rng, level, v.fams); locked = false; fb = null; api.prompt(`Puzzle ${level + 1}${cur.hard ? ', two rules at once' : ''}. What comes next?`); }
-    const start = performance.now();
-    /* The clock stops while the answer and its rule are on screen. */
-    api.loop(now => {
-      const el = (pausedAt || now) - start - paused; api.timer(1 - el / D);
-      if (el >= D && !over) { over = true; api.done((right - wrong * .5) / 9 * 100, `${right} right · ${wrong} wrong`); return false; }
+    function next() { cur = makeSeries(rng, level, v.fams); locked = false; fb = null; api.prompt(`Puzzle ${level + 1}${cur.hard ? ', two rules at once' : ''}. What comes next?`); }
+    api.end(() => api.done((right - wrong * .5) / 8 * 100, `${right} right · ${wrong} wrong`));
+    api.loop(() => {
       P.clear();
       P.text(cur.hard ? 'HARD · TWO RULES' : 'ONE RULE', pad, H * .07, css('--muted'), 6, 'left');
       for (let i = 0; i < 4; i++) drawTile(P, i < 3 ? cur.seq[i] : (fb ? cur.ans : null), pad + ts / 2 + i * (ts + gap), H * .27, ts, i === 3 ? (fb ? PAL.green : css('--edge')) : null);
@@ -1056,12 +1071,12 @@ const DRILLS = [
       if (locked) return;
       const p = P.pos(e), i = cur.opts.findIndex((_, j) => Math.abs(p.x - optX(j)) <= os / 2 + gap && Math.abs(p.y - optY) <= os / 2 + gap);
       if (i < 0) return;
-      const ok = cur.opts[i] === cur.ans; locked = true; level++; pausedAt = performance.now();
+      const ok = cur.opts[i] === cur.ans; locked = true; level++;
       if (ok) right++; else wrong++;
       fb = { pick: i, col: ok ? PAL.green : PAL.red };
       const why = cur.why.charAt(0).toUpperCase() + cur.why.slice(1);
       api.prompt(`${ok ? 'Right.' : 'Not quite, the answer is outlined.'} ${why}.<br>${right} right · ${wrong} wrong`, true);
-      api.later(next, ok ? 1100 : 2600);
+      api.later(next, ok ? 800 : 2000);
     });
     next();
   }
@@ -1071,14 +1086,13 @@ const DRILLS = [
   variant: r => ({ fams: shuffle(r, ['rot', 'count', 'color', 'shape']).slice(0, 3) }),
   how: v => `Each row and column of the grid follows a rule. Pick the tile that fills the gap. Small grids first, then 3 by 3. Today's rules play with ${famList(v.fams)}.`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, D = 30000, pad = 6, gap = 4;
+    const P = api.px(), { W, H } = P, rng = api.rng, pad = 6, gap = 4;
     const os = Math.floor((W - 2 * pad - 3 * gap) / 4), optY = H - pad - os / 2, area = Math.min(W - 2 * pad, optY - os / 2 - 3 * gap - pad);
     let k = 0, pts = 0, right = 0, wrong = 0, cur, locked = false, fb = null;
     const optX = i => pad + os / 2 + i * (os + gap);
     function next() { cur = makeMatrix(rng, k < 2 ? 2 : 3, v.fams); locked = false; fb = null; }
-    const start = performance.now();
-    api.loop(now => {
-      api.timer(1 - (now - start) / D); P.clear();
+    api.loop(() => {
+      P.clear();
       const n = cur.n, cs = (area - (n - 1) * gap) / n, x0 = (W - area) / 2 + cs / 2, y0 = pad + cs / 2;
       cur.cells.forEach((t, i) => drawTile(P, t || (fb ? cur.ans : null), x0 + (i % n) * (cs + gap), y0 + Math.floor(i / n) * (cs + gap), cs, t ? null : (fb ? fb.col : css('--edge'))));
       cur.opts.forEach((t, i) => drawTile(P, t, optX(i), optY, os, fb && fb.pick === i ? fb.col : null));
@@ -1094,7 +1108,7 @@ const DRILLS = [
       api.later(next, ok ? 400 : 1000);
     });
     api.prompt('Which tile fills the gap?');
-    api.later(() => api.done(pts / 12 * 100, `${right} solved · ${wrong} wrong`), D);
+    api.end(() => api.done(pts / 12 * 100, `${right} solved · ${wrong} wrong`));
     next();
   }
 },
@@ -1103,7 +1117,7 @@ const DRILLS = [
   variant: r => ({ color: pick(r, ['cyan', 'yellow', 'pink', 'orange', 'green']), free: r() < .5 }),
   how: v => `Two block shapes. Is the right one the same shape just turned around, or a mirror image? You can't flip it over, only spin it.${v.free ? ' Today they spin to any angle, not just quarter turns.' : ''}`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, D = 25000, unit = W * (v.free ? .074 : .092);
+    const P = api.px(), { W, H } = P, rng = api.rng, unit = W * (v.free ? .074 : .092);
     let right = 0, wrong = 0, n = 0, cur = null, locked = true, fb = null;
     function next() {
       locked = true; cur = null;
@@ -1112,9 +1126,8 @@ const DRILLS = [
         cur = { cells: polyomino(rng, 5 + Math.min(3, Math.floor(n / 3))), a0, a1: a0 + turn, mirror: rng() < .5 }; locked = false; fb = null; n++;
       }, 150);
     }
-    const start = performance.now();
-    api.loop(now => {
-      api.timer(1 - (now - start) / D); P.clear();
+    api.loop(() => {
+      P.clear();
       P.rect(W / 2, H * .15, 1, H * .7, css('--rule'));
       if (!cur) return;
       drawPoly(P, cur.cells, W * .25, H / 2, unit, cur.a0, false, PAL[v.color]);
@@ -1130,7 +1143,7 @@ const DRILLS = [
     api.showButtons([{ html: 'SAME', label: 'Same', fn: () => answer(false) }, { html: 'MIRROR', label: 'Mirror', fn: () => answer(true) }]);
     api.on(window, 'keydown', e => { if (e.code === 'ArrowLeft') answer(false); if (e.code === 'ArrowRight') answer(true); });
     api.prompt('Same shape turned, or a mirror image?');
-    api.later(() => api.done((right - wrong) / 14 * 100, `${right} right · ${wrong} wrong`), D);
+    api.end(() => api.done((right - wrong) / 17 * 100, `${right} right · ${wrong} wrong`));
     next();
   }
 },
@@ -1139,7 +1152,7 @@ const DRILLS = [
   variant: r => ({ len: pick(r, ['short', 'long', 'mix']), flash: r() < .4 }),
   how: v => `A word appears. Is it a real English word, or a fake that only looks like one? Answer fast, the fakes are sneaky.${v.flash ? ' Twist: each word vanishes after a split second.' : ''}`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, D = 25000, g = P.g;
+    const P = api.px(), { W, H } = P, rng = api.rng, g = P.g;
     const fits = w => v.len === 'short' ? w.length <= 5 : v.len === 'long' ? w.length >= 6 : true;
     const real = shuffle(rng, REAL_WORDS.filter(fits)), fake = shuffle(rng, FAKE_WORDS.filter(fits));
     let right = 0, wrong = 0, cur = null, visible = false, locked = true, fb = null;
@@ -1152,9 +1165,8 @@ const DRILLS = [
         if (v.flash) api.later(() => { if (cur && cur.w === w) visible = false; }, 650);
       }, 180);
     }
-    const start = performance.now();
-    api.loop(now => {
-      api.timer(1 - (now - start) / D); P.clear();
+    api.loop(() => {
+      P.clear();
       if (cur && visible) P.text(cur.w, W / 2, H / 2, css('--ink'), cur.size);
       else if (cur && !locked) P.text('?', W / 2, H / 2, css('--muted'), 12);
       if (fb) P.frame(6, 6, W - 12, H - 12, fb, 2);
@@ -1169,7 +1181,7 @@ const DRILLS = [
     api.showButtons([{ html: 'REAL', label: 'Real word', fn: () => answer(true) }, { html: 'FAKE', label: 'Fake word', fn: () => answer(false) }]);
     api.on(window, 'keydown', e => { if (e.code === 'ArrowLeft') answer(true); if (e.code === 'ArrowRight') answer(false); });
     api.prompt('Real word or fake?');
-    api.later(() => api.done((right - wrong) / 22 * 100, `${right} right · ${wrong} wrong`), D);
+    api.end(() => api.done((right - wrong) / 26 * 100, `${right} right · ${wrong} wrong`));
     next();
   }
 },
@@ -1178,7 +1190,7 @@ const DRILLS = [
   variant: r => ({ kinds: r() < .5 ? ['side', 'stack'] : ['side', 'stack', 'size'], colors: shuffle(r, ['red', 'yellow', 'cyan', 'purple', 'green']).slice(0, 2) }),
   how: v => `A sentence describes two shapes, like "The dome is not above the fan." Look at the picture and tap True or False. Watch out for the word NOT.${v.kinds.includes('size') ? ' Some sentences compare sizes too.' : ''}`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, D = 25000;
+    const P = api.px(), { W, H } = P, rng = api.rng;
     const REL = { side: ['left of', 'right of'], stack: ['above', 'below'], size: ['bigger than', 'smaller than'] };
     let right = 0, wrong = 0, n = 0, cur = null, locked = true, fb = null;
     function next() {
@@ -1195,9 +1207,8 @@ const DRILLS = [
         locked = false; fb = null; n++;
       }, 150);
     }
-    const start = performance.now();
-    api.loop(now => {
-      api.timer(1 - (now - start) / D); P.clear();
+    api.loop(() => {
+      P.clear();
       if (!cur) return;
       const [a, b] = cur.first ? cur.items : [cur.items[1], cur.items[0]];
       if (cur.kind === 'side') { P.spr(a.shape, a.color, W * .3, W * .28, H / 2); P.spr(b.shape, b.color, W * .3, W * .72, H / 2); }
@@ -1213,7 +1224,7 @@ const DRILLS = [
     }
     api.showButtons([{ html: 'TRUE', label: 'True', fn: () => answer(true) }, { html: 'FALSE', label: 'False', fn: () => answer(false) }]);
     api.on(window, 'keydown', e => { if (e.code === 'ArrowLeft') answer(true); if (e.code === 'ArrowRight') answer(false); });
-    api.later(() => api.done((right - wrong) / 13 * 100, `${right} right · ${wrong} wrong`), D);
+    api.end(() => api.done((right - wrong) / 16 * 100, `${right} right · ${wrong} wrong`));
     next();
   }
 },
@@ -1222,7 +1233,7 @@ const DRILLS = [
   variant: r => ({ second: r() < .7 ? 'alt' : 'down', color: pick(r, ['cyan', 'yellow', 'pink', 'green']) }),
   how: v => `Dots are scattered across the screen. Tap 1, 2, 3 and on up to 9. Then a second board: ${v.second === 'alt' ? 'switch between numbers and letters, 1, A, 2, B, 3, C' : 'count down from 10 to 1'}. Wrong taps cost points, finishing early earns a bonus.`,
   run(api, v) {
-    const P = api.px(), { W, H } = P, rng = api.rng, g = P.g, D = 30000, r = W * .066, pad = 4;
+    const P = api.px(), { W, H } = P, rng = api.rng, g = P.g, r = W * .066, pad = 4;
     const BOARDS = [Array.from({ length: 9 }, (_, i) => String(i + 1)),
       v.second === 'alt' ? ['1', 'A', '2', 'B', '3', 'C', '4', 'D', '5', 'E', '6'] : Array.from({ length: 10 }, (_, i) => String(10 - i))];
     const total = BOARDS[0].length + BOARDS[1].length;
@@ -1236,15 +1247,13 @@ const DRILLS = [
       }
       api.prompt(bi === 0 ? 'Tap 1 to 9 in order.' : v.second === 'alt' ? 'Now 1, A, 2, B, 3, C…' : 'Now count down: 10 to 1.');
     }
-    const start = performance.now();
     function finish() {
       if (finished) return; finished = true;
-      const left = Math.max(0, D - (performance.now() - start)), done = got === total;
+      const left = api.left(), done = got === total;
       api.done(got / total * 85 + (done ? Math.min(15, left / 1000 * 1.5) : 0) - wrong * 3, `${got} of ${total} dots · ${wrong} wrong tap${wrong === 1 ? '' : 's'}`);
     }
+    api.end(finish);
     api.loop(now => {
-      const el = now - start; api.timer(1 - el / D);
-      if (el >= D) { finish(); return false; }
       P.clear();
       g.strokeStyle = PAL[v.color]; g.lineWidth = 1.5; g.beginPath();
       dots.filter(d => d.done).forEach((d, i) => i ? g.lineTo(d.x, d.y) : g.moveTo(d.x, d.y)); g.stroke();
@@ -1725,9 +1734,9 @@ DRILLS.push({
 }, {
   id: 'thread', name: 'Common Thread', skill: 'Quick association', cat: 'words',
   variant: () => ({}),
-  how: () => 'Four emoji, one thing in common. Pick the link from four choices, as many as you can in thirty seconds. Starts with colors and fruit, ends with wordplay.',
+  how: () => 'Four emoji, one thing in common. Pick the link from four choices, as many as you can. Starts with colors and fruit, ends with wordplay.',
   run(api) {
-    const D = 25000, rng = api.rng, LEVELS = [1, 1, 2, 2, 2, 3, 3, 3, 4], start = performance.now();
+    const rng = api.rng, LEVELS = [1, 1, 2, 2, 2, 3, 3, 3, 4];
     const shown = document.createElement('div');
     shown.className = 'ct'; api.stage.appendChild(shown);
     let right = 0, wrong = 0, n = 0, cur = null, locked = true;
@@ -1756,9 +1765,8 @@ DRILLS.push({
       api.prompt(ok ? `${right} right · ${wrong} wrong` : `It was ${cur.cat.label}. ${right} right · ${wrong} wrong`);
       api.later(round, ok ? 250 : 900);
     }
-    api.loop(now => { api.timer(1 - (now - start) / D); });
     api.prompt('What do all four have in common?');
-    api.later(() => api.done((right - wrong * .5) / 8 * 100, `${right} right · ${wrong} wrong`), D);
+    api.end(() => api.done((right - wrong * .5) / 10 * 100, `${right} right · ${wrong} wrong`));
     round();
   }
 });
@@ -1811,7 +1819,7 @@ function playOne(id) {
   S = { seedKey: 'practice-' + Math.random().toString(36).slice(2), practice: true, single: true, order: [id], results: [] };
   introDrill();
 }
-function backHome() { teardown(); card.hidden = true; S = loadToday(); S.results.length >= PER_DAY ? renderDone() : renderHome(); }
+function backHome() { newFlow(); teardown(); card.hidden = true; S = loadToday(); S.results.length >= PER_DAY ? renderDone() : renderHome(); }
 
 function renderHome() {
   $('#cb-btn').setAttribute('aria-pressed', String(CB)); $('#cb-btn').textContent = `Color-blind palette: ${CB ? 'on' : 'off'}`;
@@ -1827,23 +1835,89 @@ function renderHome() {
   ripple($('#home-dome'), 360);
 }
 
-/* ---------- Drill runner ---------- */
-const arena = $('#arena'), card = $('#card'), controls = $('#controls'), timerEl = $('#timer');
-let cleanups = [];
-function teardown() { cleanups.forEach(f => { try { f(); } catch (e) {} }); cleanups = []; arena.innerHTML = ''; controls.innerHTML = ''; controls.hidden = true; controls.className = ''; }
+/* ---------- Motion ---------- */
+let REDUCED = false;
+try { REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+/* Web Animations with the end state kept. With reduced motion, movement is dropped: fades stay short, everything else jumps to its end. */
+function anim(el, frames, o) {
+  if (!el.animate) { const { offset, ...end } = frames[frames.length - 1]; Object.assign(el.style, end); return Promise.resolve(); }
+  if (REDUCED) {
+    const fades = frames.some(f => 'opacity' in f);
+    if (fades) frames = frames.map(({ transform, clipPath, ...f }) => f);
+    o = { ...o, duration: fades ? Math.min(o.duration, 180) : 0, delay: fades ? Math.min(o.delay || 0, 100) : 0 };
+  }
+  return el.animate(frames, { fill: 'both', ...o }).finished.catch(() => {});
+}
+const EASE_OUT = 'cubic-bezier(.2,.7,.2,1)', EASE_IN = 'cubic-bezier(.6,0,.8,.3)';
+const DOME = r => `circle(${r} at 50% 100%)`;
 
-function introDrill() {
-  const i = S.results.length, d = drillById(S.order[i]), v = variantFor(d);
-  teardown(); show('play');
-  $('#hud-name').textContent = d.name; $('#hud-count').textContent = S.single ? (d.side ? 'SIDE GAME' : 'PRACTICE') : `${S.practice ? 'PRACTICE · ' : ''}DRILL ${n2(i)} / ${String(PER_DAY).padStart(2, '0')}`;
+/* ---------- Drill runner ---------- */
+const arena = $('#arena'), card = $('#card'), controls = $('#controls'), timerEl = $('#timer'), stage = $('#stage');
+let cleanups = [];
+function stopDrill() { cleanups.forEach(f => { try { f(); } catch (e) {} }); cleanups = []; }
+function teardown() { stopDrill(); arena.innerHTML = ''; controls.innerHTML = ''; controls.hidden = true; controls.className = ''; stage.querySelectorAll('.stamp').forEach(e => e.remove()); }
+
+/* The flow between drills (intro, countdown, score stamp) runs on its own token, so leaving mid-transition cancels whatever was pending. */
+let flow = 0, pending = [];
+function newFlow() { pending.forEach(f => f()); pending = []; return ++flow; }
+function onKeys(fn) { const h = e => { if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); fn(); } }; window.addEventListener('keydown', h); pending.push(() => window.removeEventListener('keydown', h)); }
+
+function paintHud(d, i) {
+  $('#hud-name').textContent = d.name;
+  $('#hud-count').textContent = S.single ? (d.side ? 'SIDE GAME' : 'PRACTICE') : `${S.practice ? 'PRACTICE · ' : ''}DRILL ${n2(i)} / ${String(PER_DAY).padStart(2, '0')}`;
+  $('#hud-clock').textContent = d.side ? '' : DUR / 1000;
   $('#prog').innerHTML = S.order.map((_, j) => `<i style="background:${j < i ? tierCol(S.results[j].score) : j === i ? css('--A') : ''}"></i>`).join('');
-  timerEl.style.transform = 'scaleX(1)'; $('#prompt').textContent = '';
-  card.className = 'card';
-  card.innerHTML = `<div class="dome" id="card-dome"></div><h2>${d.name}</h2><div class="label skill">${d.skill}</div><p>${d.how(v)}</p><button class="btn ghost" id="go-btn">Go</button>`;
+  timerEl.style.transform = 'scaleX(1)'; timerEl.parentNode.classList.remove('low'); $('#hud-clock').classList.remove('low');
+}
+
+/* Between drills, three rings rise from the bottom of the stage like the dome and the card settles on the last one.
+   A countdown starts the drill on its own; a tap starts it sooner. Then the rings sink back and the drill is underneath. */
+function introDrill() {
+  const my = newFlow(), i = S.results.length, d = drillById(S.order[i]), v = variantFor(d);
+  if ($('#play').hidden) { teardown(); show('play'); } else { stopDrill(); controls.hidden = true; }
+  paintHud(d, i); $('#prompt').textContent = '';
+  const trio = TRIO(), col = trio[i % 3], how = d.how(v);
+  /* First time with a drill: time to read the rules. After that, a three second count. */
+  const seen = store.get(KEY('seen'), {}), words = how.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).length;
+  const wait = seen[d.id] ? 3000 : clamp(1500 + words * 200, 4000, 10000);
+  seen[d.id] = 1; store.set(KEY('seen'), seen);
+  card.className = 'card intro';
+  card.innerHTML = [trio[(i + 1) % 3], trio[(i + 2) % 3], col, css('--bg')].map(c => `<div class="ring" style="background:${c}"></div>`).join('')
+    + `<div class="in"><div class="label">${S.single ? (d.side ? 'SIDE GAME' : 'PRACTICE') : `DRILL ${n2(i)} / ${String(PER_DAY).padStart(2, '0')}`} · ${d.side ? 'NO CLOCK' : `${DUR / 1000} SECONDS`}</div>`
+    + `<h2>${d.name}</h2><div class="label" style="color:${col}">${d.skill}</div><p>${how}</p>`
+    + `<div class="cd"><span class="label dim">Tap to start now</span><b style="color:${col}"></b></div><div class="cd-bar"><i style="background:${col}"></i></div></div>`;
   card.hidden = false;
-  ripple($('#card-dome'), Math.min(316, $('#stage').clientWidth));
-  const go = $('#go-btn'); go.focus({ preventScroll: true });
-  go.addEventListener('click', () => { card.hidden = true; runDrill(d, v, i); });
+  const rings = [...card.querySelectorAll('.ring')], inner = card.querySelector('.in'), num = inner.querySelector('.cd b'), bar = inner.querySelector('.cd-bar i');
+  const rise = rings.map((r, k) => anim(r, [{ clipPath: DOME('0%') }, { clipPath: DOME('160%') }], { duration: 640, delay: k * 90, easing: EASE_OUT }));
+  [...inner.children].forEach((el, k) => anim(el, [{ opacity: 0, transform: 'translateY(22px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 360 + k * 55, easing: EASE_OUT }));
+  let go = false, t0 = 0, shown = -1;
+  const start = () => {
+    if (go || my !== flow) return; go = true;
+    const me = newFlow();
+    anim(inner, [{ opacity: 1 }, { opacity: 0 }], { duration: 160 }).then(() => {
+      if (me !== flow) return;
+      /* Pinned over the stage so the drill measures a square arena, whatever height the card had. */
+      card.classList.add('leaving');
+      runDrill(d, v, i);
+      const sink = rings.slice().reverse().map((r, k) => anim(r, [{ clipPath: DOME('160%') }, { clipPath: DOME('0%') }], { duration: 460, delay: k * 70, easing: EASE_IN }));
+      sink[sink.length - 1].then(() => { if (card.classList.contains('leaving') && me === flow) { card.hidden = true; card.className = 'card'; card.innerHTML = ''; } });
+    });
+  };
+  rise[rise.length - 1].then(() => {
+    if (my !== flow) return;
+    /* The last drill (and its score) is fully covered now. */
+    arena.innerHTML = ''; controls.innerHTML = ''; controls.className = ''; stage.querySelectorAll('.stamp').forEach(e => e.remove());
+    t0 = performance.now();
+    inner.addEventListener('pointerdown', start); onKeys(start);
+    const tick = now => {
+      if (go || my !== flow) return;
+      const left = wait - (now - t0), n = Math.max(1, Math.ceil(left / 1000));
+      bar.style.transform = `scaleX(${clamp(left / wait, 0, 1)})`;
+      if (n !== shown) { shown = n; num.textContent = n; anim(num, [{ transform: 'scale(1.35)', opacity: .4 }, { transform: 'scale(1)', opacity: 1 }], { duration: 260, easing: EASE_OUT }); }
+      if (left <= 0) start(); else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
 }
 
 function makePx() {
@@ -1866,14 +1940,18 @@ function makePx() {
   P.clear(); return P;
 }
 
+/* Every daily drill runs on the same clock. The runner owns it: it drains the bar, and at the buzzer calls the drill's end() to score what was done. */
 function runDrill(d, v, i) {
-  let finished = false; const run = S; cleanups.push(() => { finished = true; });
+  let finished = false, onEnd = null, t0 = performance.now(); const run = S; cleanups.push(() => { finished = true; });
   const api = {
     rng: rngOf(S.seedKey + ':' + d.id),
     stage: arena,
     px: makePx,
     prompt: (t, html) => { if (html) $('#prompt').innerHTML = t; else $('#prompt').textContent = t; },
     timer: f => { timerEl.style.transform = `scaleX(${clamp(f, 0, 1)})`; },
+    left: () => Math.max(0, DUR - (performance.now() - t0)),
+    end(fn) { onEnd = fn; },
+    cost(ms) { t0 -= ms; },
     later(fn, ms) { const id = setTimeout(() => { if (!finished) fn(); }, ms); cleanups.push(() => clearTimeout(id)); return id; },
     loop(fn) {
       let id; const tick = t => { if (finished) return; if (fn(t) === false) return; id = requestAnimationFrame(tick); };
@@ -1898,27 +1976,59 @@ function runDrill(d, v, i) {
       const sc = Math.round(clamp(score, 0, 100));
       setTimeout(() => {
         if (S !== run) return;
-        teardown();
+        stopDrill();
         S.results[i] = { id: d.id, score: sc, detail }; save();
-        const last = S.results.length >= S.order.length;
-        card.className = 'card result';
-        card.innerHTML = `<div class="label">${d.name}</div><div class="score">${sc}<small>/100</small></div><div class="meter"><i style="width:${sc}%;background:${tierCol(sc)}"></i></div><div class="verdict" style="color:${tierCol(sc)}">${verdict(sc)}</div><p>${detail}</p><button class="btn" id="next-btn">${last ? 'See my score' : 'Next drill'}</button>`;
-        card.hidden = false; timerEl.style.transform = 'scaleX(0)';
-        $('#prompt').textContent = last ? 'That\'s the full set.' : `Up next: ${drillById(S.order[i + 1]).name}`;
-        const nb = $('#next-btn'); nb.focus({ preventScroll: true });
-        if (S.single) {
-          nb.textContent = 'Play again'; $('#prompt').textContent = '';
-          nb.insertAdjacentHTML('afterend', '<button class="btn ghost" id="menu-btn" style="margin-top:0">Back</button>');
-          nb.addEventListener('click', () => playOne(d.id));
-          $('#menu-btn').addEventListener('click', backHome);
-          return;
-        }
-        nb.addEventListener('click', () => last ? renderDone() : introDrill());
+        stampResult(d, sc, detail, i);
       }, 250);
     }
   };
+  if (!d.side) {
+    const clock = $('#hud-clock'), box = timerEl.parentNode; let shown = -1;
+    api.loop(now => {
+      const left = DUR - (now - t0), sec = Math.max(0, Math.ceil(left / 1000));
+      timerEl.style.transform = `scaleX(${clamp(left / DUR, 0, 1)})`;
+      if (sec !== shown) { shown = sec; clock.textContent = sec; box.classList.toggle('low', sec <= 5); clock.classList.toggle('low', sec <= 5); }
+      if (left <= 0) { if (onEnd) onEnd(); else api.done(0, 'Time'); return false; }
+    });
+  }
   d.run(api, v);
 }
+
+/* After each drill the score stamps onto the stage over the last frame, then the next drill's rings rise over it. No button in between. */
+function stampResult(d, sc, detail, i) {
+  const my = newFlow(), last = S.results.length >= S.order.length, col = tierCol(sc);
+  controls.hidden = true; controls.innerHTML = ''; timerEl.style.transform = 'scaleX(0)'; timerEl.parentNode.classList.remove('low'); $('#hud-clock').classList.remove('low');
+  const seg = $('#prog').children[i]; if (seg) seg.style.background = col;
+  const el = document.createElement('div');
+  el.className = 'stamp';
+  el.innerHTML = `<div class="label">${d.name}</div><div class="score"><span>0</span><small>/100</small></div><div class="meter"><i style="background:${col}"></i></div><div class="verdict" style="color:${col}">${verdict(sc)}</div><p>${detail}</p>`;
+  stage.appendChild(el);
+  anim(el, [{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+  anim(el.querySelector('.score'), [{ transform: 'scale(.55)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: .65 }, { transform: 'scale(1)', opacity: 1 }], { duration: 480, delay: 60, easing: EASE_OUT });
+  anim(el.querySelector('.meter i'), [{ width: '0%' }, { width: sc + '%' }], { duration: 650, delay: 120, easing: EASE_OUT });
+  anim(el.querySelector('.verdict'), [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 300, delay: 420, easing: EASE_OUT });
+  countUp(el.querySelector('.score span'), sc, 650);
+  if (S.single) {
+    $('#prompt').textContent = '';
+    controls.className = 'one'; controls.hidden = false;
+    controls.innerHTML = '<button class="btn" id="again-btn">Play again</button><button class="btn ghost" id="menu-btn">Back</button>';
+    $('#again-btn').addEventListener('click', () => playOne(d.id));
+    $('#menu-btn').addEventListener('click', backHome);
+    return;
+  }
+  $('#prompt').textContent = last ? 'That\'s the full set.' : `Up next: ${drillById(S.order[i + 1]).name}`;
+  const next = () => { if (my !== flow) return; last ? renderDone() : introDrill(); };
+  const id = setTimeout(next, last ? 1900 : 1700); pending.push(() => clearTimeout(id));
+  /* A tap moves on early, but not in the first moment, so a late tap meant for the drill doesn't skip the score. */
+  const armId = setTimeout(() => { el.addEventListener('pointerdown', next); onKeys(next); }, 450); pending.push(() => clearTimeout(armId));
+}
+function countUp(node, to, ms) {
+  if (REDUCED || !to) { node.textContent = to; return; }
+  const t0 = performance.now();
+  const tick = now => { const u = clamp((now - t0) / ms, 0, 1); node.textContent = Math.round(to * (1 - Math.pow(1 - u, 3))); if (u < 1 && node.isConnected) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+
 
 /* ---------- Stickers ---------- */
 /* Dome stickers, earned per set. Each one is a half circle: rings or a three-color fan. */
@@ -1957,7 +2067,7 @@ function streakInfo() {
   return { streak, played: vals.length, best: vals.length ? Math.max(...vals) : 0 };
 }
 function renderDone() {
-  teardown(); card.hidden = true;
+  newFlow(); teardown(); card.hidden = true;
   const total = S.results.reduce((a, r) => a + r.score, 0);
   if (!S.practice) { const hist = store.get(KEY('hist'), {}); hist[TODAY] = total; store.set(KEY('hist'), hist); }
   $('#done-eyebrow').innerHTML = S.practice ? '<span class="practice-tag">PRACTICE RUN</span>' : 'TODAY\'S FINAL';
@@ -1976,6 +2086,10 @@ function renderDone() {
   };
   tick(); countdownId = setInterval(tick, 1000);
   show('done');
+  /* The page builds in from the top: the total counts up and each bar fills in turn. */
+  [...$('#done').children].forEach((el, k) => anim(el, [{ opacity: 0, transform: 'translateY(18px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: k * 70, easing: EASE_OUT }));
+  countUp($('#total-num'), total, 900);
+  $('#final-roster').querySelectorAll('.bar i').forEach((b, k) => anim(b, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 600, delay: 250 + k * 80, easing: EASE_OUT }));
 }
 
 $('#share-btn').addEventListener('click', () => {
