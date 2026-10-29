@@ -1013,8 +1013,8 @@ const DRILLS = [
     api.showButtons([{ html: icon(v.shape, v.a), label: v.a, fn: () => answer('a') }, { html: icon(v.shape, v.b), label: v.b, fn: () => answer('b') }]);
     api.on(window, 'keydown', e => { if (e.code === 'ArrowLeft') answer('a'); if (e.code === 'ArrowRight') answer('b'); });
     api.prompt('Which color had more?');
-    /* About 18 flashes fit in the time. 17 right is a perfect score; a wrong answer costs half a right one. */
-    api.end(() => api.done((right - wrong * .5) / 17 * 100, `${right} right · ${wrong} wrong`));
+    /* About 25 flashes fit in the time. 20 right, net of wrong answers, is a perfect score. Wrong costs a full right one, so mashing a 50/50 nets nothing. */
+    api.end(() => api.done((right - wrong) / 20 * 100, `${right} right · ${wrong} wrong`));
     next();
   }
 },
