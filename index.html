@@ -97,7 +97,49 @@ button:focus-visible{outline:2px solid var(--C);outline-offset:4px}
 .card.leaving{position:absolute;inset:0}
 .card .ring{position:absolute;inset:0;clip-path:circle(0% at 50% 100%)}
 .card .in{position:relative;flex:1;display:flex;flex-direction:column;gap:14px;padding:4px 0 6px;cursor:pointer}
-.card p{font-size:16px;line-height:1.4;opacity:.85;max-width:44ch}
+.card .goal{font-size:22px;font-weight:800;font-stretch:90%;line-height:1.15;text-wrap:balance}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+/* Glance panels: pictures first, a word or two under each. Green caption is the move to make, red is the trap. */
+.strip{display:flex;align-items:stretch;gap:6px}
+.pane{flex:1 1 0;min-width:0;background:var(--panel-2);display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:8px;padding:12px 6px 10px;text-align:center}
+.pane .cap{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.pane.yes .cap{color:var(--ok)}
+.pane.no .cap{color:var(--no)}
+.then{align-self:center;font-weight:800;opacity:.6}
+.art{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:3px;min-height:30px;font-size:14px;font-weight:700}
+.art .ico{width:22px;height:22px;vertical-align:middle}
+.art b{margin:0 3px}
+.art .g{font-size:22px;font-weight:900;font-stretch:80%;line-height:1}
+.art .gl{display:inline-block;font-size:28px;margin:0 6px}
+.art .em{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;font-size:22px;letter-spacing:2px}
+.art .hl{display:inline-flex;box-shadow:0 0 0 2px var(--ink)}
+.art .kk{display:inline-flex;flex-direction:column;align-items:center;font-size:12px;margin:0 2px}
+.art .kk b{margin:0}
+.art .dt{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--accent-ink);font-size:12px;font-weight:800}
+.art .stk{display:inline-flex;flex-direction:column}
+.art .ln{display:inline-block;width:4px;height:30px;background:#F2C54B}
+.art .trk{position:relative;display:inline-block;width:110px;height:26px}
+.art .trk i{position:absolute;left:0;right:0;top:11px;height:4px;background:var(--rule)}
+.art .trk::after{content:"";position:absolute;left:54px;top:0;width:2px;height:26px;background:#F2C54B}
+.art .trk b{position:absolute;left:0;top:4px;width:10px;height:18px;margin:0;animation:trk 1.4s ease-in-out infinite alternate}
+@keyframes trk{to{left:100px}}
+@media (prefers-reduced-motion:reduce){.art .trk b{animation:none;left:50px}}
+.mg{display:inline-grid;gap:2px}
+.mg i{width:16px;height:16px;display:flex;align-items:center;justify-content:center;background:#301116;font-style:normal;font-size:10px;font-weight:800;color:var(--accent-ink)}
+.mg i .ico{width:13px;height:13px}
+.mg i.r{box-shadow:inset 0 0 0 2px var(--ink);color:var(--ink)}
+.twist{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;box-shadow:inset 0 0 0 2px var(--C);padding:8px 10px;font-size:15px;font-weight:600}
+.twist .tag,.cue .tag{background:var(--C);color:var(--accent-ink);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:3px 6px}
+.twist .art{min-height:0}
+/* A rule change mid-drill stops the clock and takes over the stage for a beat. */
+.cue{position:absolute;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;background:rgba(46,15,20,.95);text-align:center}
+.cue .tag{font-size:14px;padding:5px 10px}
+.cue .art{gap:6px;transform-origin:50% 50%}
+.cue .art .ico{width:40px;height:40px}
+.cue .art .g{font-size:40px}
+.cue .art .dt{width:40px;height:40px;font-size:18px}
+.cue .art .kk{font-size:18px}
+.cue .cap{font-size:22px;font-weight:800;font-stretch:90%;max-width:20ch;text-wrap:balance}
 .card .cd{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;border-top:2px solid var(--ink);padding-top:10px}
 .card .cd b{font-weight:900;font-stretch:75%;font-size:76px;line-height:.78;letter-spacing:-.04em;font-variant-numeric:tabular-nums;transform-origin:100% 100%}
 .card .cd-bar{height:6px;background:var(--rule)}
@@ -447,12 +489,35 @@ function drawPoly(P, cells, x, y, unit, angle, mirror, col) {
 const REAL_WORDS = 'anchor apple arrow badge baker bandit basket beach berry blade blank blanket blast bloom board bonus bottle brain brave bread brick bride brush bucket butter button cabin camel candle candy cannon canoe carpet carrot castle cattle chair chalk charm cheese cherry chess chest chicken circle claim cliff clock cloud clover coach coast copper cotton couch crane crayon crown dance dart desert desk diamond dinner doctor dollar donkey dragon drama dream dress drift drum eagle earth elbow engine fable fancy farm feast feather fence field finger flame flash fleet flood flour flower flute focus forest forge frame frost fruit gallon garden ghost giant glove goose grape grass gravel guitar hammer harbor heart hockey honey horse hotel house island jacket jelly jewel judge juice jungle kettle kidney kitten knife ladder lamp lantern lemon level light lizard lobster lunch magic maple marble market meadow medal metal mirror model money monkey motor mouse music napkin needle noble ocean olive onion orange orbit oyster paddle paint panel paper parrot party pebble pencil pepper piano pillow pilot pirate planet plank plant plate plum pocket point potato power pretzel prize pupil puppy puzzle queen quilt rabbit racket radio rain ranch razor ribbon river robin rocket royal ruler saddle sail salad salt saucer scarf scooter shadow shark sheep shell shield shirt shoe silver skate sleeve slope smile snake sock solar spice sponge spoon sport squad stamp statue storm stove sugar summer sunset sweater sword table tablet tackle temple thunder ticket tiger timber toast token tomato tonic towel tower track train travel trophy truck tulip tunnel turkey turtle valley velcro velvet violin waffle wagon wallet walnut walrus water whale wheat wheel whistle window winter wizard wolf yacht zebra'.split(' ');
 const FAKE_WORDS = 'aarth ancher applo arrew bandot baver blede blide bliom blist blonk boach botor bourd braad brein briad broin buard buckit butten buttir canie canoo carpat carrat cattla cemel cenoe cheefe chickin chiir chirm chocken chuss cleim clober cloed clorer coech costle cottol crewn cunnon dactor dalrus dask demert diabond diger dinnir doard dragin dregon droft drul duamond ducket dunset durtle eigle elbos engane engino engire enion errow faather fabla fablet facus faeld feither fenca feust fible finged firge flama flane flaur fleut flouk foble focas foces focket fokest fonce forist frait frast froit fuather funce gadder gaitar garded garrot gellon geose gerden ghist giint glofe gonus goofe grafel grapel gravol gravul grepe grupe guant gurden gurtle guutar harbar himmer horso hoteg inion islind jaice jecket jedge jerel jewil jewol judga juwel kadge karpet keadow keart kence kepper ketten kittek knine korse kotton lanturn ledder lemen lemop leson liant loard loast lobstar lobstor loght lomp lontern luntern luvel luzard maadow meagow mebal medul memal mepper mesk metat metol metor mircle mirrir mizard modeg morest motar moufe moupe murble mutor nanch nasket nepkin nocket nocus nollar nomato nuble oagle oarth oceap onien onive onuon opple orbig orean otion ovean packle paddlo pallow paont papkin patato pazzle pencel peppor piane pikot pilut pirabe plake plaket plote pockot poent pollow poncil porrot potaso pretzed pretzeg pretzep pubble puncil rabbut racken rackep rackot rallon ralt ranio ravio rebbon rettle ricket rillow rivar rodio rofin rorin rucket rulen ruver saacer sael sanel sanoe saucar saucen saucir scioter scootep seedle shadaw shiold shiuld siant silvor skote soast sobar socus sopper speon spide spongo starm statuo stutue sucket sufar sunsep sunsit susar swird tadge talip tanel taple tarrot tartle tecket thundir tible tickat tifer tigen tigep timbar tinger tinnel tircle tockle toger tomapo tonir tonis tonnel towal towil towur tradel traval trock tuckle tulap tulop tunnul turip uarth unchor vaint valt vaple varpet viofin vodel vomato voose vuolin waler wallut walnat watar welnut wheut windod wulrus wundow wuter'.split(' ');
 
+/* ---------- Glance cards ---------- */
+/* Each drill teaches itself in pictures: a one-line goal, a few small panels, and a flagged twist when the rules change partway through. */
+const G = {
+  txt: t => `<span class="g">${t}</span>`,
+  hl: h => `<span class="hl">${h}</span>`,
+  em: t => `<span class="em">${t}</span>`,
+  key: (h, n) => `<span class="kk">${h}<b>${n}</b></span>`,
+  dots: labels => labels.map(l => `<span class="dt">${l}</span>`).join(''),
+  glyph: (t, tf = 'none') => `<span class="g gl" style="transform:${tf}">${t}</span>`,
+  stack: (a, b) => `<span class="stk">${a}${b}</span>`,
+  line: () => '<span class="ln"></span>',
+  track: c => `<span class="trk"><i></i><b style="background:${PAL[c]}"></b></span>`,
+  grid: (n, cells) => `<span class="mg" style="grid-template-columns:repeat(${n},1fr)">${Array.from({ length: n * n }, (_, i) => { const c = cells[i] || {}; return `<i${c.ring ? ' class="r"' : ''}${c.bg ? ` style="background:${c.bg}"` : ''}>${c.h || ''}</i>`; }).join('')}</span>`
+};
+function glanceHtml(g) {
+  const pane = p => `<div class="pane ${p.kind || ''}"><div class="art">${p.art}</div><div class="cap">${p.cap}</div></div>`;
+  return `<p class="goal">${g.goal}</p><div class="strip">${g.panes.map(pane).join(g.seq ? '<span class="then">→</span>' : '')}</div>`
+    + (g.twist ? `<div class="twist"><span class="tag">${g.twist.tag}</span>${g.twist.art ? `<span class="art">${g.twist.art}</span>` : ''}<span>${g.twist.cap}</span></div>` : '');
+}
+
 /* ---------- The drill pool (7 of these are picked each day, at most two per category; side games are never picked) ---------- */
 const DRILLS = [
 {
   id: 'blackout', name: 'Blackout', skill: 'Reaction time', cat: 'react',
   variant: r => ({ color: pick(r, ['red', 'pink', 'cyan', 'yellow']), decoy: r() < .5 }),
   how: v => `Five lights switch on, one at a time. The instant they all go dark, tap. Tap early and it's a false start.${v.decoy ? ' Careful: some lights flicker to fake you out.' : ''}`,
+  glance: v => ({ goal: 'Tap the instant the lights go out.', seq: true,
+    panes: [{ art: icon('circle', v.color).repeat(5), cap: 'Wait…' }, { art: icon('circle', UI.ghost).repeat(5), cap: 'Tap!', kind: 'yes' }],
+    twist: v.decoy ? { tag: 'Trap', art: icon('circle', v.color).repeat(2) + icon('circle', UI.ghost) + icon('circle', v.color).repeat(2), cap: 'One light flickering out is a fake. Wait for all five.' } : null }),
   run(api, v) {
     const P = api.px(), { W, H } = P, N = 5, lamp = Math.round(W / 8), gap = Math.round(W / 40);
     const decoyAt = v.decoy ? [1, 3, 5] : [];
@@ -503,6 +568,9 @@ const DRILLS = [
   id: 'shuffle', name: 'Shell Shuffle', skill: 'Multiple object tracking', cat: 'attention',
   variant: r => ({ shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), fast: r() < .4 }),
   how: v => `A few ${plural(v.shape)} blink, then they all start shuffling. Keep your eyes on the ones that blinked and tap them when the shuffling stops.`,
+  glance: v => ({ goal: 'Follow the ones that blink.', seq: true,
+    panes: [{ art: icon(v.shape, '#FFFFFF') + icon(v.shape, v.color) + icon(v.shape, '#FFFFFF'), cap: 'Watch' }, { art: G.txt('⇄'), cap: 'Shuffle' },
+      { art: G.hl(icon(v.shape, v.color)) + icon(v.shape, v.color) + G.hl(icon(v.shape, v.color)), cap: 'Tap them', kind: 'yes' }] }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .09), r = s / 2, pad = 4, STEPS = 300, f = v.fast ? .06 : 0;
     const ROUNDS = [{ n: 8, t: 3, sp: .30 + f }, { n: 10, t: 4, sp: .40 + f }, { n: 11, t: 4, sp: .46 + f }, { n: 12, t: 5, sp: .50 + f }];
@@ -570,12 +638,16 @@ const DRILLS = [
   id: 'headcount', name: 'Headcount', skill: 'Rapid counting', cat: 'attention',
   variant: r => ({ modes: [0, 1, 2].map(() => pick(r, ['shape', 'color', 'both'])) }),
   how: () => 'A crowd of shapes drifts by for a few seconds, then you say how many. Each round counts one thing: a SHAPE in any color, a COLOR in any shape, or both together. The round tells you which first. Rounds get quicker.',
+  glance: () => ({ goal: 'Count what the round asks for.',
+    panes: [{ art: ['red', 'cyan', 'yellow'].map(c => icon('fan', c)).join(''), cap: 'Shape' }, { art: ['dome', 'cross', 'drop'].map(s => icon(s, 'pink')).join(''), cap: 'Color' },
+      { art: icon('fan', 'pink'), cap: 'Both' }],
+    twist: { tag: 'Each round', cap: 'The thing to count can change. Watch for NEW RULE.' } }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .085), r = s / 2, pad = 4;
     const ROUNDS = [{ n: 15, ms: 4000, max: 7 }, { n: 19, ms: 3500, max: 9 }, { n: 23, ms: 3000, max: 11 }];
-    let ri = 0, pts = 0, exact = 0, items = [], phase = 'intro', k, isTarget, ts, tc, mode, cfg, phaseStart = 0, last = null;
+    let ri = 0, pts = 0, exact = 0, items = [], phase = 'intro', k, isTarget, ts, tc, mode, changed = false, cfg, phaseStart = 0, last = null;
     function setup() {
-      cfg = ROUNDS[Math.min(ri, ROUNDS.length - 1)]; mode = v.modes[ri % v.modes.length];
+      cfg = ROUNDS[Math.min(ri, ROUNDS.length - 1)]; changed = ri > 0 && v.modes[ri % v.modes.length] !== mode; mode = v.modes[ri % v.modes.length];
       ts = pick(rng, SHAPES); tc = pick(rng, COLOR_NAMES); k = 3 + Math.floor(rng() * (cfg.max - 2));
       const otherS = SHAPES.filter(x => x !== ts), otherC = COLOR_NAMES.filter(x => x !== tc);
       const make = i => {
@@ -609,11 +681,12 @@ const DRILLS = [
       if (last == null) last = now; const dt = Math.min(.05, (now - last) / 1000); last = now;
       const el = now - phaseStart; P.clear();
       if (phase === 'intro') {
-        P.text(mode === 'shape' ? 'COUNT THE SHAPE' : mode === 'color' ? 'COUNT THE COLOR' : 'SHAPE AND COLOR', W / 2, H * .2, css('--muted'), 8);
+        if (changed) P.text('NEW RULE', W / 2, H * .09, css('--C'), 9);
+        P.text(mode === 'shape' ? 'COUNT THE SHAPE' : mode === 'color' ? 'COUNT THE COLOR' : 'SHAPE AND COLOR', W / 2, H * .2, changed ? css('--ink') : css('--muted'), 8);
         if (mode === 'color') P.text(tc.toUpperCase(), W / 2, H * .52, PAL[tc], 18);
         else P.spr(ts, mode === 'shape' ? INK : tc, Math.round(W * .3), W / 2, H * .52);
         P.text(mode === 'shape' ? 'ANY COLOR' : mode === 'color' ? 'ANY SHAPE' : 'BOTH MUST MATCH', W / 2, H * .84, css('--muted'), 8);
-        if (el > 1800) { phase = 'crowd'; phaseStart = now; }
+        if (el > (changed ? 2300 : 1800)) { phase = 'crowd'; phaseStart = now; }
         return;
       }
       if (phase === 'crowd') {
@@ -640,6 +713,13 @@ const DRILLS = [
     : v.type === 'color' ? `Tap anything ${colorWord(v.color)}. Color only, any shape.`
     : `Tap everything except ${colorWord(v.color)}. Color only, any shape.`,
   how(v) { return `Shapes pop up all over the grid. ${this.rule(v)} Tap the wrong one and it's a foul.`; },
+  glance: v => {
+    const [s1, s2] = SHAPES.filter(x => x !== v.shape), [c1, c2] = COLOR_NAMES.filter(c => c !== v.color);
+    const tap = v.type === 'shape' ? icon(v.shape, c1) + icon(v.shape, c2) : v.type === 'color' ? icon(s1, v.color) + icon(s2, v.color) : icon(s1, c1) + icon(s2, c2);
+    const skip = v.type === 'shape' ? icon(s1, c1) + icon(s2, c2) : v.type === 'color' ? icon(s1, c1) + icon(s2, c2) : icon(s1, v.color) + icon(s2, v.color);
+    return { goal: v.type === 'shape' ? 'Tap the shape. Color doesn\'t matter.' : v.type === 'color' ? 'Tap the color. Shape doesn\'t matter.' : `Tap everything except ${colorWord(v.color)}.`,
+      panes: [{ art: tap, cap: 'Tap', kind: 'yes' }, { art: skip, cap: 'Leave', kind: 'no' }] };
+  },
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, D = DUR, pad = 6, cell = (W - 2 * pad) / 3, s = Math.round(cell * .62);
     const goP = v.type === 'except' ? .78 : .68;
@@ -686,6 +766,10 @@ const DRILLS = [
   id: 'odd', name: 'Odd One Out', skill: 'Visual search', cat: 'attention',
   variant: r => ({ base: pick(r, ['fan', 'drop', 'dome']) }),
   how: () => `Every grid has exactly one shape that is a little bit different: ${CB ? '' : 'a shade off, '}a size off, turned the wrong way, or a different shape. Tap it. Grids get bigger, and from the 8th grid on the rest of the crowd starts mixing things up too. Wrong taps cost two seconds.`,
+  glance: v => ({ goal: 'Tap the one that\'s different.',
+    panes: [{ art: G.grid(3, Array.from({ length: 9 }, (_, i) => ({ h: icon(v.base, 'cyan', i === 5 ? Math.PI / 2 : 0), ring: i === 5 }))), cap: 'Find it', kind: 'yes' },
+      { art: G.txt('−2s'), cap: 'Wrong tap', kind: 'no' }],
+    twist: { tag: 'Grid 8', cap: 'The rest of the crowd starts mixing it up. Still just one odd one.' } }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, SIZES = [3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9], pad = 4;
     const NEAR = [['red', 'pink'], ['blue', 'purple'], ['green', 'cyan'], ['orange', 'yellow'], ['pink', 'purple']];
@@ -716,7 +800,8 @@ const DRILLS = [
       const p = P.pos(e), n = board.n, ci = Math.floor((p.x - pad) / board.cell), rj = Math.floor((p.y - pad) / board.cell);
       if (ci < 0 || rj < 0 || ci >= n || rj >= n) return;
       const i = rj * n + ci, it = board.items[i];
-      if (i === board.odd) { found++; ri++; fx.push({ x: it.x, y: it.y, c: board.cell, ok: true, t: performance.now() }); make(); api.prompt(ri === 7 ? `${found} found. Now the crowd mixes it up.` : `${found} found. Keep going.`); }
+      if (i === board.odd) { found++; ri++; fx.push({ x: it.x, y: it.y, c: board.cell, ok: true, t: performance.now() }); make(); api.prompt(ri === 7 ? `${found} found. Now the crowd mixes it up.` : `${found} found. Keep going.`);
+        if (ri === 7) api.cue({ tag: 'Heads up', art: [0, 1, 2, 3].map(k => icon(v.base, k === 2 ? 'pink' : 'cyan', k * Math.PI / 2)).join(''), cap: 'The crowd mixes it up. Still just one odd one.' }, 1400); }
       else { api.cost(2000); fx.push({ x: it.x, y: it.y, c: board.cell, ok: false, t: performance.now() }); }
     });
     make();
@@ -726,6 +811,8 @@ const DRILLS = [
   id: 'intercept', name: 'Intercept', skill: 'Anticipation', cat: 'react',
   variant: r => ({ shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), fog: r() < .5 ? .4 : .33 }),
   how: v => `A ${v.shape} flies toward the yellow line on the right, then vanishes into the static. Tap where it will cross the line before it gets there. It can bounce off the top and bottom.`,
+  glance: v => ({ goal: 'Tap where it will cross the line.', seq: true,
+    panes: [{ art: icon(v.shape, v.color) + G.txt('⤳'), cap: 'It flies' }, { art: G.txt('▒'), cap: 'It vanishes' }, { art: G.line(), cap: 'Tap the line', kind: 'yes' }] }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .07), r = s / 2, pad = 4, fogX = Math.round(W * v.fog), endX = W - pad - 3;
     let k = 0, thrown = 0, sum = 0, caught = 0, path, phase, phaseStart, guess, ink = css('--ink');
@@ -772,6 +859,12 @@ const DRILLS = [
   id: 'middle', name: 'Middle Arrow', skill: 'Focus under distraction', cat: 'control',
   variant: r => ({ vertical: r() < .4, flip: r() < .5 }),
   how: v => `Five arrows in a ${v.vertical ? 'column' : 'row'}. Which way is the middle one pointing: up, down, left or right? The others are trying to fake you out.${v.flip ? ` Twist: when the arrows are ${colorWord('pink')}, answer the opposite way.` : ''} Use the buttons or arrow keys.`,
+  glance: v => {
+    const row = c => [Math.PI, Math.PI, 0, Math.PI, Math.PI].map((a, i) => i === 2 ? G.hl(icon('arrow', c, a)) : icon('arrow', c, a)).join('');
+    return { goal: 'Only the middle arrow counts.', seq: true,
+      panes: [{ art: row('cyan'), cap: 'Middle one' }, { art: icon('arrow', 'yellow', 0), cap: 'Answer', kind: 'yes' }],
+      twist: v.flip ? { tag: 'Pink = flip', art: row('pink') + G.txt('→') + icon('arrow', 'yellow', Math.PI), cap: 'Pink arrows: answer the opposite way.' } : null };
+  },
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W / 7), gap = Math.round(W / 40);
     /* Left, up, down, right. OPP maps each to its opposite. */
@@ -792,6 +885,7 @@ const DRILLS = [
         const d = i === 2 ? cur.dir : cur.fl, off = -total / 2 + i * (s + gap) + s / 2;
         P.spr('arrow', col, s, v.vertical ? W / 2 : W / 2 + off, v.vertical ? H / 2 + off : H / 2, A[d]);
       }
+      if (cur.pink && !flashCol) P.text(v.vertical ? 'FLIP' : 'FLIP IT', v.vertical ? W * .8 : W / 2, v.vertical ? H / 2 : H * .78, PAL.pink, 9);
     });
     function answer(d) {
       if (locked || !cur) return;
@@ -811,6 +905,11 @@ const DRILLS = [
   id: 'echo', name: 'Echo', skill: 'Sequence memory', cat: 'memory',
   variant: r => ({ grid: r() < .6 ? 3 : 4, reverse: r() < .3, color: pick(r, ['cyan', 'pink', 'green', 'orange']) }),
   how: v => `Tiles light up one after another. Tap them back in the ${v.reverse ? 'reverse order, last one first' : 'same order'}. Each pattern you nail adds a tile; a miss drops one. Clear as many as you can.`,
+  glance: v => {
+    const at = [0, 4, 7], grid = nums => G.grid(3, Array.from({ length: 9 }, (_, i) => at.includes(i) ? { bg: PAL[v.color], h: nums[at.indexOf(i)] } : {}));
+    return { goal: v.reverse ? 'Tap the tiles back, last one first.' : 'Tap the tiles back in the same order.', seq: true,
+      panes: [{ art: grid(['1', '2', '3']), cap: 'Watch' }, { art: grid(v.reverse ? ['3', '2', '1'] : ['1', '2', '3']), cap: v.reverse ? 'Backwards' : 'Repeat', kind: 'yes' }] };
+  },
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, n = v.grid, pad = 8, cell = (W - 2 * pad) / n, ts = Math.round(cell - 6);
     let len = 3, best = 0, pts = 0, cleared = 0, seq = [], phase = 'watch', litIdx = -1, input = [], fb = null;
@@ -856,6 +955,11 @@ const DRILLS = [
   id: 'snapshot', name: 'Snapshot', skill: 'Visual memory', cat: 'memory',
   variant: r => ({ grid: r() < .5 ? 5 : 6, shape: pick(r, SHAPES), color: pick(r, COLOR_NAMES), flash: r() < .5 ? 900 : 700 }),
   how: v => `A few ${plural(v.shape)} flash on the grid for a split second. Tap every square where one appeared. More ${plural(v.shape)} each round.`,
+  glance: v => {
+    const at = [1, 5, 6], grid = f => G.grid(3, Array.from({ length: 9 }, (_, i) => at.includes(i) ? f() : {}));
+    return { goal: 'Remember where they flashed.', seq: true,
+      panes: [{ art: grid(() => ({ h: icon(v.shape, v.color) })), cap: 'Flash' }, { art: G.grid(3, []), cap: 'Gone' }, { art: grid(() => ({ ring: true })), cap: 'Tap the spots', kind: 'yes' }] };
+  },
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, n = v.grid, pad = 6, cell = (W - 2 * pad) / n, s = Math.round(cell * .7);
     const ROUNDS = [3, 4, 5, 6, 7, 8];
@@ -902,6 +1006,11 @@ const DRILLS = [
   id: 'nback', name: 'Déjà Vu', skill: 'Working memory', cat: 'memory',
   variant: r => ({ back: pick(r, [2, 2, 3, 3, 4, 5]) }),
   how: v => `Shapes appear one at a time. Tap MATCH (or press Space) when a shape is exactly the same as the one ${v.back} steps back. Same shape and same color. Today is ${v.back} back.`,
+  glance: v => {
+    const seq = ['dome', 'cross', 'fan', 'clover', 'drop'].slice(0, v.back).map((s, i) => icon(s, ['cyan', 'pink', 'yellow', 'green', 'orange'][i]));
+    return { goal: `Tap MATCH when it's the same as ${v.back} back.`,
+      panes: [{ art: seq.join('') + G.hl(seq[0]), cap: 'Match', kind: 'yes' }, { art: seq.join('') + icon('dome', 'red'), cap: 'Color differs', kind: 'no' }] };
+  },
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, N = 20, ON = 1100, OFF = 400, s = Math.round(W * .32), nb = v.back;
     const items = [];
@@ -940,6 +1049,9 @@ const DRILLS = [
   id: 'bullseye', name: 'Bullseye', skill: 'Timing', cat: 'react',
   variant: r => ({ blind: r() < .45, color: pick(r, COLOR_NAMES), speed: .9 + r() * .35 }),
   how: v => `A block slides back and forth along the track. Stop it dead center in the target by tapping (or pressing Space).${v.blind ? ' The middle of the track is dark, so you have to feel the timing.' : ''}`,
+  glance: v => ({ goal: 'Stop the block dead center.',
+    panes: [{ art: G.track(v.color), cap: 'Tap on the line', kind: 'yes' }],
+    twist: v.blind ? { tag: 'Dark', cap: 'The middle of the track goes dark. Feel the timing.' } : null }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .08), y = H / 2, lo = 10, hi = W - 10;
     let k = 0, shots = 0, sum = 0, bulls = 0, phase, x, dir, sp, zone, zw, started, result = null, last = null;
@@ -982,6 +1094,8 @@ const DRILLS = [
   id: 'tally', name: 'Quick Tally', skill: 'Number sense', cat: 'attention',
   variant: r => { const [a, b] = shuffle(r, COLOR_NAMES).slice(0, 2); return { a, b, shape: pick(r, ['dome', 'drop', 'clover']) }; },
   how: v => `A burst of ${icon(v.shape, v.a)} ${v.a} and ${icon(v.shape, v.b)} ${v.b} ${plural(v.shape)} flashes for a moment. Which color had more? No time to count, go with your gut.`,
+  glance: v => ({ goal: 'Which color had more? Go with your gut.', seq: true,
+    panes: [{ art: [v.a, v.b, v.a, v.a, v.b].map(c => icon(v.shape, c)).join(''), cap: 'Flash' }, { art: icon(v.shape, v.a), cap: 'More', kind: 'yes' }] }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, s = Math.round(W * .06), pad = 6;
     let right = 0, wrong = 0, cur = null, visible = false, locked = true, fb = null, n = 0;
@@ -1022,6 +1136,9 @@ const DRILLS = [
   id: 'code', name: 'Code Breaker', skill: 'Processing speed', cat: 'speed',
   variant: r => ({ shapes: shuffle(r, SHAPES).slice(0, 6), color: pick(r, ['cyan', 'yellow', 'pink', 'green', 'orange']), remap: r() < .4 }),
   how: v => `The key up top matches six shapes to the numbers 1 to 6. When a shape appears, tap its number. As many as you can.${v.remap ? ' Twist: halfway through, the key gets reshuffled.' : ''}`,
+  glance: v => ({ goal: 'Tap the number that matches the shape.', seq: true,
+    panes: [{ art: v.shapes.slice(0, 3).map((s, i) => G.key(icon(s, v.color), i + 1)).join(''), cap: 'The key' }, { art: icon(v.shapes[1], v.color) + G.txt('= 2'), cap: 'Tap 2', kind: 'yes' }],
+    twist: v.remap ? { tag: 'Halfway', art: G.txt('⟳'), cap: 'The key reshuffles. Look again.' } : null }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, cw = W / 6, ks = Math.round(cw * .62), big = Math.round(W * .34);
     let key = v.shapes.slice(), right = 0, wrong = 0, cur = -1, locked = true, fb = null, remapped = false, remapAt = -1e9;
@@ -1029,7 +1146,10 @@ const DRILLS = [
     const start = performance.now();
     api.loop(now => {
       const el = now - start;
-      if (v.remap && !remapped && el > DUR / 2) { remapped = true; key = shuffle(rng, key); remapAt = now; api.prompt('New key! Look again.'); }
+      if (v.remap && !remapped && el > DUR / 2) {
+        remapped = true; key = shuffle(rng, key); locked = true; api.prompt('New key! Look again.');
+        api.cue({ tag: 'New key', art: key.map((s, i) => G.key(icon(s, v.color), i + 1)).join(''), cap: 'Same shapes, new numbers.' }, 2000).then(() => { remapAt = performance.now(); locked = false; });
+      }
       P.clear();
       const blink = now - remapAt < 700 && Math.floor((now - remapAt) / 120) % 2 === 0;
       P.rect(0, 0, W, H * .3, blink ? UI.fogLine : UI.deep);
@@ -1054,6 +1174,9 @@ const DRILLS = [
   id: 'series', name: 'Next in Line', skill: 'Pattern reasoning', cat: 'reason',
   variant: r => ({ fams: shuffle(r, ['rot', 'count', 'color', 'shape']).slice(0, 3) }),
   how: v => `Three tiles follow a pattern. Pick the tile that comes next. Today's patterns play with ${famList(v.fams)}. Later puzzles mix two rules at once.`,
+  glance: () => ({ goal: 'Pick the tile that comes next.',
+    panes: [{ art: [0, 1, 2].map(k => icon('arrow', 'yellow', k * Math.PI / 2)).join('') + G.txt('?'), cap: 'Spot the change' }],
+    twist: { tag: 'Puzzle 4', cap: 'Two things change at once from here on.' } }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, pad = 6, gap = 5, ts = Math.floor((W - 2 * pad - 3 * gap) / 4), os = Math.min(ts * 1.15, (W - 2 * pad - 2 * gap * 2) / 3);
     let level = 0, right = 0, wrong = 0, cur, locked = false, fb = null;
@@ -1076,7 +1199,7 @@ const DRILLS = [
       fb = { pick: i, col: ok ? PAL.green : PAL.red };
       const why = cur.why.charAt(0).toUpperCase() + cur.why.slice(1);
       api.prompt(`${ok ? 'Right.' : 'Not quite, the answer is outlined.'} ${why}.<br>${right} right · ${wrong} wrong`, true);
-      api.later(next, ok ? 800 : 2000);
+      api.later(() => level === 3 ? api.cue({ tag: 'Level up', art: G.txt('×2'), cap: 'Two things change at once now.' }).then(next) : next(), ok ? 800 : 2000);
     });
     next();
   }
@@ -1085,6 +1208,9 @@ const DRILLS = [
   id: 'matrix', name: 'Missing Piece', skill: 'Abstract reasoning', cat: 'reason',
   variant: r => ({ fams: shuffle(r, ['rot', 'count', 'color', 'shape']).slice(0, 3) }),
   how: v => `Each row and column of the grid follows a rule. Pick the tile that fills the gap. Small grids first, then 3 by 3. Today's rules play with ${famList(v.fams)}.`,
+  glance: () => ({ goal: 'Pick the tile that fills the gap.',
+    panes: [{ art: G.grid(2, [{ h: icon('dome', 'cyan') }, { h: icon('dome', 'pink') }, { h: icon('cross', 'cyan') }, { h: '?', ring: true }]), cap: 'Rows and columns' }, { art: icon('cross', 'pink'), cap: 'Fits', kind: 'yes' }],
+    twist: { tag: 'Later', cap: 'Grids grow to 3 by 3.' } }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, pad = 6, gap = 4;
     const os = Math.floor((W - 2 * pad - 3 * gap) / 4), optY = H - pad - os / 2, area = Math.min(W - 2 * pad, optY - os / 2 - 3 * gap - pad);
@@ -1116,6 +1242,8 @@ const DRILLS = [
   id: 'spin', name: 'Spin Doctor', skill: 'Mental rotation', cat: 'reason',
   variant: r => ({ color: pick(r, ['cyan', 'yellow', 'pink', 'orange', 'green']), free: r() < .5 }),
   how: v => `Two block shapes. Is the right one the same shape just turned around, or a mirror image? You can't flip it over, only spin it.${v.free ? ' Today they spin to any angle, not just quarter turns.' : ''}`,
+  glance: () => ({ goal: 'Same shape spun around, or a mirror image?',
+    panes: [{ art: G.glyph('F') + G.glyph('F', 'rotate(90deg)'), cap: 'Same' }, { art: G.glyph('F') + G.glyph('F', 'scaleX(-1)'), cap: 'Mirror' }] }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, unit = W * (v.free ? .074 : .092);
     let right = 0, wrong = 0, n = 0, cur = null, locked = true, fb = null;
@@ -1151,6 +1279,9 @@ const DRILLS = [
   id: 'word', name: 'Real or Fake', skill: 'Word recognition', cat: 'words',
   variant: r => ({ len: pick(r, ['short', 'long', 'mix']), flash: r() < .4 }),
   how: v => `A word appears. Is it a real English word, or a fake that only looks like one? Answer fast, the fakes are sneaky.${v.flash ? ' Twist: each word vanishes after a split second.' : ''}`,
+  glance: v => ({ goal: 'Real word or fake?',
+    panes: [{ art: G.txt('garden'), cap: 'Real', kind: 'yes' }, { art: G.txt('gerden'), cap: 'Fake', kind: 'no' }],
+    twist: v.flash ? { tag: 'Fast', cap: 'Each word vanishes after a split second.' } : null }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, g = P.g;
     const fits = w => v.len === 'short' ? w.length <= 5 : v.len === 'long' ? w.length >= 6 : true;
@@ -1189,6 +1320,9 @@ const DRILLS = [
   id: 'logic', name: 'True or False', skill: 'Verbal reasoning', cat: 'words',
   variant: r => ({ kinds: r() < .5 ? ['side', 'stack'] : ['side', 'stack', 'size'], colors: shuffle(r, ['red', 'yellow', 'cyan', 'purple', 'green']).slice(0, 2) }),
   how: v => `A sentence describes two shapes, like "The dome is not above the fan." Look at the picture and tap True or False. Watch out for the word NOT.${v.kinds.includes('size') ? ' Some sentences compare sizes too.' : ''}`,
+  glance: v => ({ goal: 'Does the sentence match the picture?',
+    panes: [{ art: G.stack(icon('dome', 'red'), icon('fan', 'yellow')), cap: 'Picture' }, { art: `${icon('dome', 'red')}<b>not</b> above${icon('fan', 'yellow')}`, cap: 'False', kind: 'no' }],
+    twist: { tag: 'Watch', cap: `NOT flips the answer.${v.kinds.includes('size') ? ' Some sentences compare sizes.' : ''}` } }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng;
     const REL = { side: ['left of', 'right of'], stack: ['above', 'below'], size: ['bigger than', 'smaller than'] };
@@ -1232,6 +1366,9 @@ const DRILLS = [
   id: 'trail', name: 'Connect the Dots', skill: 'Visual scanning', cat: 'speed',
   variant: r => ({ second: r() < .7 ? 'alt' : 'down', color: pick(r, ['cyan', 'yellow', 'pink', 'green']) }),
   how: v => `Dots are scattered across the screen. Tap 1, 2, 3 and on up to 9. Then a second board: ${v.second === 'alt' ? 'switch between numbers and letters, 1, A, 2, B, 3, C' : 'count down from 10 to 1'}. Wrong taps cost points, finishing early earns a bonus.`,
+  glance: v => ({ goal: 'Tap the dots in order, fast.',
+    panes: [{ art: G.dots(['1', '2', '3']) + G.txt('…9'), cap: 'Board 1' }],
+    twist: { tag: 'Board 2', art: v.second === 'alt' ? G.dots(['1', 'A', '2', 'B']) : G.dots(['10', '9', '8']) + G.txt('…1'), cap: v.second === 'alt' ? 'Numbers and letters take turns.' : 'Count down.' } }),
   run(api, v) {
     const P = api.px(), { W, H } = P, rng = api.rng, g = P.g, r = W * .066, pad = 4;
     const BOARDS = [Array.from({ length: 9 }, (_, i) => String(i + 1)),
@@ -1270,7 +1407,13 @@ const DRILLS = [
       if (!best) return;
       if (best === dots[idx]) {
         best.done = true; idx++; got++;
-        if (idx === dots.length) { if (bi === 0) { bi = 1; api.later(setup, 250); } else finish(); }
+        if (idx === dots.length) {
+          if (bi === 0) {
+            bi = 1;
+            api.cue(v.second === 'alt' ? { tag: 'Board 2', art: G.dots(['1', 'A', '2', 'B']) + G.txt('…'), cap: 'Numbers and letters take turns.' }
+              : { tag: 'Board 2', art: G.dots(['10', '9', '8']) + G.txt('…1'), cap: 'Now count down.' }).then(setup);
+          } else finish();
+        }
       } else { wrong++; fx = { x: best.x, y: best.y, t: performance.now() }; }
     });
     setup();
@@ -1686,6 +1829,8 @@ DRILLS.push({
   id: 'linkup', name: 'Link Up', skill: 'Pattern finding', cat: 'links', side: true,
   variant: () => ({}),
   how: () => 'Sixteen emoji hide four groups of four. Tap four that share a link, then Submit. One group is obvious, one is sneaky wordplay. No clock, but four wrong guesses ends it.',
+  glance: () => ({ goal: 'Find four groups of four.',
+    panes: [{ art: G.em('🍎🍌🍇🍊'), cap: 'Fruit', kind: 'yes' }, { art: G.txt('✗✗✗✗'), cap: 'Four misses ends it', kind: 'no' }] }),
   run(api) {
     const MAX_MISS = 4, groups = linkPuzzle(api.rng);
     let tiles = shuffle(api.rng, groups.flatMap(g => g.members)), sel = [], solved = [], mistakes = 0, over = false;
@@ -1735,6 +1880,8 @@ DRILLS.push({
   id: 'thread', name: 'Common Thread', skill: 'Quick association', cat: 'words',
   variant: () => ({}),
   how: () => 'Four emoji, one thing in common. Pick the link from four choices, as many as you can. Starts with colors and fruit, ends with wordplay.',
+  glance: () => ({ goal: 'What do all four have in common?', seq: true,
+    panes: [{ art: G.em('🍎🚒🍓❤️'), cap: 'Four emoji' }, { art: G.txt('Red'), cap: 'Pick the link', kind: 'yes' }] }),
   run(api) {
     const rng = api.rng, LEVELS = [1, 1, 2, 2, 2, 3, 3, 3, 4];
     const shown = document.createElement('div');
@@ -1855,7 +2002,7 @@ const DOME = r => `circle(${r} at 50% 100%)`;
 const arena = $('#arena'), card = $('#card'), controls = $('#controls'), timerEl = $('#timer'), stage = $('#stage');
 let cleanups = [];
 function stopDrill() { cleanups.forEach(f => { try { f(); } catch (e) {} }); cleanups = []; }
-function teardown() { stopDrill(); arena.innerHTML = ''; controls.innerHTML = ''; controls.hidden = true; controls.className = ''; stage.querySelectorAll('.stamp').forEach(e => e.remove()); }
+function teardown() { stopDrill(); arena.innerHTML = ''; controls.innerHTML = ''; controls.hidden = true; controls.className = ''; stage.querySelectorAll('.stamp, .cue').forEach(e => e.remove()); }
 
 /* The flow between drills (intro, countdown, score stamp) runs on its own token, so leaving mid-transition cancels whatever was pending. */
 let flow = 0, pending = [];
@@ -1876,20 +2023,23 @@ function introDrill() {
   const my = newFlow(), i = S.results.length, d = drillById(S.order[i]), v = variantFor(d);
   if ($('#play').hidden) { teardown(); show('play'); } else { stopDrill(); controls.hidden = true; }
   paintHud(d, i); $('#prompt').textContent = '';
-  const trio = TRIO(), col = trio[i % 3], how = d.how(v);
-  /* First time with a drill: time to read the rules. After that, a three second count. */
-  const seen = store.get(KEY('seen'), {}), words = how.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).length;
-  const wait = seen[d.id] ? 3000 : clamp(1500 + words * 200, 4000, 10000);
+  const trio = TRIO(), col = trio[i % 3], g = d.glance(v);
+  /* First time with a drill: a few seconds to take in the pictures. After that, a three second count. A twist adds a beat either way. */
+  const seen = store.get(KEY('seen'), {});
+  const wait = (seen[d.id] ? 3000 : 5000) + (g.twist ? 1500 : 0);
   seen[d.id] = 1; store.set(KEY('seen'), seen);
   card.className = 'card intro';
   card.innerHTML = [trio[(i + 1) % 3], trio[(i + 2) % 3], col, css('--bg')].map(c => `<div class="ring" style="background:${c}"></div>`).join('')
     + `<div class="in"><div class="label">${S.single ? (d.side ? 'SIDE GAME' : 'PRACTICE') : `DRILL ${n2(i)} / ${String(PER_DAY).padStart(2, '0')}`} · ${d.side ? 'NO CLOCK' : `${DUR / 1000} SECONDS`}</div>`
-    + `<h2>${d.name}</h2><div class="label" style="color:${col}">${d.skill}</div><p>${how}</p>`
+    + `<h2>${d.name}</h2><div class="label" style="color:${col}">${d.skill}</div>${glanceHtml(g)}<p class="sr">${d.how(v)}</p>`
     + `<div class="cd"><span class="label dim">Tap to start now</span><b style="color:${col}"></b></div><div class="cd-bar"><i style="background:${col}"></i></div></div>`;
   card.hidden = false;
   const rings = [...card.querySelectorAll('.ring')], inner = card.querySelector('.in'), num = inner.querySelector('.cd b'), bar = inner.querySelector('.cd-bar i');
   const rise = rings.map((r, k) => anim(r, [{ clipPath: DOME('0%') }, { clipPath: DOME('160%') }], { duration: 640, delay: k * 90, easing: EASE_OUT }));
   [...inner.children].forEach((el, k) => anim(el, [{ opacity: 0, transform: 'translateY(22px)' }, { opacity: 1, transform: 'none' }], { duration: 420, delay: 360 + k * 55, easing: EASE_OUT }));
+  /* The panels then play in order like a comic strip, and the twist lands last so it reads as "and then". */
+  const beats = [...inner.querySelectorAll('.strip > *'), ...inner.querySelectorAll('.twist')];
+  beats.forEach((el, k) => anim(el, [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 620 + k * 240, easing: EASE_OUT }));
   let go = false, t0 = 0, shown = -1;
   const start = () => {
     if (go || my !== flow) return; go = true;
@@ -1942,7 +2092,7 @@ function makePx() {
 
 /* Every daily drill runs on the same clock. The runner owns it: it drains the bar, and at the buzzer calls the drill's end() to score what was done. */
 function runDrill(d, v, i) {
-  let finished = false, onEnd = null, t0 = performance.now(); const run = S; cleanups.push(() => { finished = true; });
+  let finished = false, onEnd = null, t0 = performance.now(), hold = 0; const run = S; cleanups.push(() => { finished = true; });
   const api = {
     rng: rngOf(S.seedKey + ':' + d.id),
     stage: arena,
@@ -1971,6 +2121,15 @@ function runDrill(d, v, i) {
       }));
     },
     hideControls() { controls.hidden = true; controls.innerHTML = ''; },
+    /* A rule change partway through: the stage shows the new rule in pictures and the clock holds until it clears. */
+    cue(c, ms = 1600) {
+      const el = document.createElement('div'); el.className = 'cue';
+      el.innerHTML = `<span class="tag">${c.tag || 'New rule'}</span>${c.art ? `<div class="art">${c.art}</div>` : ''}<div class="cap">${c.cap}</div>`;
+      stage.appendChild(el); hold = performance.now() + ms; cleanups.push(() => el.remove());
+      anim(el, [{ opacity: 0 }, { opacity: 1 }], { duration: 160 });
+      if (c.art) anim(el.querySelector('.art'), [{ transform: 'scale(.5)', opacity: 0 }, { transform: 'scale(1.08)', opacity: 1, offset: .7 }, { transform: 'scale(1)', opacity: 1 }], { duration: 420, delay: 80, easing: EASE_OUT });
+      return new Promise(res => api.later(() => { anim(el, [{ opacity: 1 }, { opacity: 0 }], { duration: 160 }).then(() => el.remove()); res(); }, ms));
+    },
     done(score, detail) {
       if (finished) return; finished = true;
       const sc = Math.round(clamp(score, 0, 100));
@@ -1983,8 +2142,9 @@ function runDrill(d, v, i) {
     }
   };
   if (!d.side) {
-    const clock = $('#hud-clock'), box = timerEl.parentNode; let shown = -1;
+    const clock = $('#hud-clock'), box = timerEl.parentNode; let shown = -1, prev = t0;
     api.loop(now => {
+      if (now < hold) t0 += now - prev; prev = now;
       const left = DUR - (now - t0), sec = Math.max(0, Math.ceil(left / 1000));
       timerEl.style.transform = `scaleX(${clamp(left / DUR, 0, 1)})`;
       if (sec !== shown) { shown = sec; clock.textContent = sec; box.classList.toggle('low', sec <= 5); clock.classList.toggle('low', sec <= 5); }
